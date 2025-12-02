@@ -1,0 +1,58 @@
+{% extends 'admin/base.html.twig' %}
+
+{% block title %}Referências Globais{% endblock %}
+
+{% block body %}
+<div class="container mx-auto px-4 py-8">
+    <div class="mb-8 flex items-center justify-between">
+        <h1 class="text-3xl font-bold text-gray-800">Referências Globais</h1>
+        <a href="{{ path('app_dashboard') }}" class="text-blue-600 hover:text-blue-800">
+            Ir para Dashboard &rarr;
+        </a>
+    </div>
+
+    <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
+        {# List #}
+        <div class="lg:col-span-2 space-y-4">
+            <h2 class="text-xl font-semibold text-gray-700 mb-4">Referências Cadastradas</h2>
+            {% for ref in references %}
+                <div class="bg-white p-4 rounded shadow-sm border border-gray-100 flex justify-between items-start group">
+                    <div>
+                        <span class="font-bold text-gray-800 block text-lg">{{ ref.term }}</span>
+                        <span class="text-gray-600">{{ ref.referenceText }}</span>
+                    </div>
+                    <form action="{{ path('app_global_reference_delete', {id: ref.id}) }}" method="POST" onsubmit="return confirm('Tem certeza?');">
+                        <button type="submit" class="text-red-400 hover:text-red-600 opacity-0 group-hover:opacity-100 transition-opacity px-2">
+                            Excluir
+                        </button>
+                    </form>
+                </div>
+            {% else %}
+                <p class="text-gray-500 italic">Nenhuma referência global cadastrada.</p>
+            {% endfor %}
+        </div>
+
+        {# Add Form #}
+        <div>
+            <div class="bg-white p-6 rounded shadow-md border border-gray-100 sticky top-4">
+                <h2 class="text-xl font-semibold text-gray-700 mb-4">Nova Referência</h2>
+                <form method="POST">
+                    <div class="space-y-4">
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-1">Vocábulo (Palavra Chave)</label>
+                            <input type="text" name="term" class="w-full p-2 border border-gray-300 rounded" required>
+                        </div>
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-1">Texto da Referência</label>
+                            <textarea name="referenceText" rows="4" class="w-full p-2 border border-gray-300 rounded" required></textarea>
+                        </div>
+                        <button type="submit" class="w-full bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded transition-colors">
+                            Salvar Referência
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

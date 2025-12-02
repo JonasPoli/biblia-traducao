@@ -23,13 +23,33 @@
         </script>
         {% block javascripts %}
             {% block importmap %}{{ importmap('app') }}{% endblock %}
+            <script src="https://cdn.tiny.cloud/1/fgoswlkgkpmdzt0fcrpns1iaszu7uspeqxnd841096wuq5wp/tinymce/6/tinymce.min.js" referrerpolicy="origin"></script>
+            <script>
+                document.addEventListener('DOMContentLoaded', function() {
+                    tinymce.init({
+                        selector: '.tinymce',
+                        height: 300,
+                        menubar: false,
+                        plugins: [
+                            'advlist autolink lists link image charmap print preview anchor',
+                            'searchreplace visualblocks code fullscreen',
+                            'insertdatetime media table paste code help wordcount'
+                        ],
+                        toolbar: 'undo redo | formatselect | ' +
+                        'bold italic backcolor | alignleft aligncenter ' +
+                        'alignright alignjustify | bullist numlist outdent indent | ' +
+                        'removeformat | help',
+                        content_style: 'body { font-family:Helvetica,Arial,sans-serif; font-size:14px }'
+                    });
+                });
+            </script>
         {% endblock %}
     </head>
     <body>
         <div class="bg-gradient-to-tr from-slate-200 to-slate-50 dark:from-slate-950 dark:to-slate-900 dark:text-white resize-x ">
             <div class="h-full min-h-screen bg-left-bottom bg-cover bg-fixed" style="background-image: radial-gradient(circle at top, rgba(255,255,255,0.7), transparent 55%), radial-gradient(circle at 20% 20%, rgba(148,163,184,0.35), transparent 45%), radial-gradient(circle at 80% 0%, rgba(125,211,252,0.25), transparent 35%);">
-                <div class="grid grid-cols-[250px_auto] grid-rols-1 lg:ml-0 ml-[-250px] transition-all min-h-screen" id="page-wrap">
-                    <nav class="pt-10 flex flex-col h-screen sticky top-0 overflow-y-auto" > 
+                <div class="grid grid-cols-[0px_auto] transition-all duration-300 min-h-screen" id="page-wrap">
+                    <nav class="pt-10 flex flex-col h-screen sticky top-0 overflow-y-auto w-[250px] bg-white/80 dark:bg-slate-900/80 backdrop-blur-sm border-r border-slate-200 dark:border-white/10 -ml-[250px] transition-all duration-300 z-20" id="sidebar"> 
                         <div class="flex-auto">
                             {% set isTestDb = app.current_route starts with 'app_admin_test_database_' %}
                             <a class='py-2 px-4 mx-4 mb-2 block rounded hover:shadow hover:shadowed hover:from-white hover:to-white/60 hover:bg-gradient-to-r hover:via-30% dark:hover:from-white/5 dark:hover:via-white/10 dark:hover:to-white/5 {% if isTestDb %}shadow bg-gradient-to-r via-30% from-white/40 via-white/90 to-white/50 dark:from-white/10 dark:via-white/20 dark:to-white/10{% endif %}' href="{{ path('app_admin_test_database_index') }}">
@@ -43,6 +63,20 @@
                                 Super Test Fields
                             </a>
 
+                            <div class="border-t border-slate-200 dark:border-white/10 my-2 mx-4"></div>
+
+                            {% set isDashboard = app.current_route starts with 'app_dashboard' %}
+                            <a class='py-2 px-4 mx-4 mb-2 block rounded hover:shadow hover:shadowed hover:from-white hover:to-white/60 hover:bg-gradient-to-r hover:via-30% dark:hover:from-white/5 dark:hover:via-white/10 dark:hover:to-white/5 {% if isDashboard %}shadow bg-gradient-to-r via-30% from-white/40 via-white/90 to-white/50 dark:from-white/10 dark:via-white/20 dark:to-white/10{% endif %}' href="{{ path('app_dashboard') }}">
+                                <sl-icon name="speedometer2" class="mr-2 align-text-top"></sl-icon>
+                                Dashboard
+                            </a>
+
+                            {% set isGlobalRef = app.current_route starts with 'app_global_reference' %}
+                            <a class='py-2 px-4 mx-4 mb-2 block rounded hover:shadow hover:shadowed hover:from-white hover:to-white/60 hover:bg-gradient-to-r hover:via-30% dark:hover:from-white/5 dark:hover:via-white/10 dark:hover:to-white/5 {% if isGlobalRef %}shadow bg-gradient-to-r via-30% from-white/40 via-white/90 to-white/50 dark:from-white/10 dark:via-white/20 dark:to-white/10{% endif %}' href="{{ path('app_global_reference_index') }}">
+                                <sl-icon name="globe" class="mr-2 align-text-top"></sl-icon>
+                                Ref. Globais
+                            </a>
+
                             <a class='py-2 px-4 mx-4 mb-2 block rounded hover:shadow hover:from-white hover:to-white/60 hover:bg-gradient-to-r hover:via-30% dark:hover:from-white/5 dark:hover:via-white/10 dark:hover:to-white/5 align-middle' href="{{path('app_logout')}}"><sl-icon name="box-arrow-left" class="mr-2 align-text-top"></sl-icon> Logout</a>
                         </div>
                         <div class="flex-none p-2 icon-button-no-color-change">
@@ -50,8 +84,8 @@
                             <sl-icon-button class="text-slate-900 text-xl hover:text-slate-900 inline-block dark:hidden" onclick="darkMode()" name="moon" label="modo escuro"></sl-icon-button>
                         </div>
                     </nav>
-                    <main class="lg:py-10 px-8 relative bg-transparent">
-                        <div class="lg:hidden icon-button-no-color-change my-4 w-full"><sl-icon-button class="dark:text-white text-xl" onclick="toggleNav()" name="list" label="abrir menu"></sl-icon-button></div>
+                    <main class="lg:py-10 px-8 relative bg-transparent transition-all duration-300">
+                        <div class="icon-button-no-color-change my-4 w-full"><sl-icon-button class="dark:text-white text-xl" onclick="toggleNav()" name="list" label="abrir menu"></sl-icon-button></div>
                         {% block body %}{% endblock %}
                     </main>
                 </div>
@@ -60,13 +94,20 @@
         </div>
         
     <script>
+        const sidebar = document.getElementById('sidebar');
         const pageWrap = document.getElementById('page-wrap');
         
         function toggleNav(){
-            if(pageWrap.style.transform == "translateX(250px)"){
-                pageWrap.style.transform = "";
-            }else{
-                pageWrap.style.transform = "translateX(250px)";
+            if (sidebar.classList.contains('-ml-[250px]')) {
+                // Open
+                sidebar.classList.remove('-ml-[250px]');
+                pageWrap.classList.remove('grid-cols-[0px_auto]');
+                pageWrap.classList.add('grid-cols-[250px_auto]');
+            } else {
+                // Close
+                sidebar.classList.add('-ml-[250px]');
+                pageWrap.classList.remove('grid-cols-[250px_auto]');
+                pageWrap.classList.add('grid-cols-[0px_auto]');
             }
         }
 

@@ -1,0 +1,243 @@
+{% extends 'admin/base.html.twig' %}
+
+{% block title %}{{ book.name }} {{ chapter }}:{{ verse.verse }} - Detalhes{% endblock %}
+
+{% block body %}
+<div class="container mx-auto px-4 py-8">
+    <div class="mb-8 flex items-center gap-4">
+        <a href="{{ path('app_translation_chapter', {bookId: book.id, chapter: chapter}) }}" class="text-blue-600 hover:text-blue-800">
+            &larr; Voltar para Capítulo
+        </a>
+        <h1 class="text-3xl font-bold text-gray-800">{{ book.name }} {{ chapter }}:{{ verse.verse }}</h1>
+    </div>
+
+    {# Translation Section #}
+    <div class="bg-white rounded-lg shadow-md p-6 border border-gray-100 mb-8">
+        <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+            <div class="space-y-4">
+                {% if texts.original %}
+                    <div class="bg-gray-50 p-4 rounded border border-gray-200">
+                        <h3 class="text-xs font-semibold text-gray-500 uppercase mb-2">Original</h3>
+                        <p class="font-serif text-lg leading-relaxed">{{ texts.original.text|raw }}</p>
+                    </div>
+                {% endif %}
+                {% if texts.reference %}
+                    <div class="bg-blue-50 p-4 rounded border border-blue-100">
+                        <h3 class="text-xs font-semibold text-blue-500 uppercase mb-2">Referência</h3>
+                        <p class="text-gray-800 leading-relaxed">{{ texts.reference.text|raw }}</p>
+                    </div>
+                {% endif %}
+            </div>
+
+            <div>
+                <h3 class="text-xs font-semibold text-green-600 uppercase mb-2">Sua Tradução</h3>
+                <form 
+                    action="{{ path('app_translation_save', {id: verse.id}) }}" 
+                    method="POST"
+                    data-controller="translation"
+                    data-action="submit->translation#save"
+                >
+                    <textarea 
+                        name="text" 
+                        rows="6" 
+                        class="w-full p-3 border border-gray-300 rounded focus:ring-2 focus:ring-green-500 focus:border-transparent mb-2 font-medium text-gray-900 tinymce"
+                        placeholder="Digite a tradução aqui..."
+                    >{{ texts.target ? texts.target.text|raw : '' }}</textarea>
+                    
+                    <div class="flex justify-between items-center">
+                        <span class="text-sm text-gray-500" data-translation-target="status"></span>
+                        <button type="submit" class="bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded transition-colors">
+                            Salvar Tradução
+                        </button>
+                    </div>
+                </form>
+
+                {# References Section #}
+                <div class="mt-8 pt-6 border-t border-gray-200">
+                    <h3 class="text-xs font-semibold text-gray-500 uppercase mb-4">Referências Cruzadas</h3>
+                    
+                    <div class="space-y-3 mb-6">
+                        {% for ref in references %}
+                            <div class="bg-gray-50 p-3 rounded text-sm flex justify-between items-start group">
+                                <div>
+                                    <span class="font-bold text-gray-700 block">{{ ref.term }}</span>
+                                    <span class="text-gray-600">{{ ref.referenceText }}</span>
+                                </div>
+                                <form action="{{ path('app_translation_reference_delete', {id: ref.id}) }}" method="POST" onsubmit="return confirm('Tem certeza?');">
+                                    <button type="submit" class="text-red-400 hover:text-red-600 opacity-0 group-hover:opacity-100 transition-opacity px-2">
+                                        &times;
+                                    </button>
+                                </form>
+                            </div>
+                        {% else %}
+                            <p class="text-sm text-gray-400 italic">Nenhuma referência cadastrada.</p>
+                        {% endfor %}
+                    </div>
+
+                    <form action="{{ path('app_translation_reference_add', {verseId: verse.id}) }}" method="POST" class="bg-gray-50 p-4 rounded border border-gray-200">
+                        <h4 class="text-sm font-semibold text-gray-700 mb-3">Adicionar Referência</h4>
+                        <div class="space-y-3">
+                            <div>
+                                <label class="block text-xs text-gray-500 mb-1">Vocábulo (Palavra Chave)</label>
+                                <input type="text" name="term" class="w-full p-2 border border-gray-300 rounded text-sm" required>
+                            </div>
+                            <div>
+                                <label class="block text-xs text-gray-500 mb-1">Texto da Referência</label>
+                                <textarea name="referenceText" rows="2" class="w-full p-2 border border-gray-300 rounded text-sm" required></textarea>
+                            </div>
+                            <button type="submit" class="w-full bg-blue-600 hover:bg-blue-700 text-white text-sm px-3 py-2 rounded transition-colors">
+                                Adicionar Referência
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    {# Tabs Section #}
+    <div x-data="{ activeTab: 'chapter' }" class="bg-white rounded-lg shadow-md border border-gray-100 overflow-hidden">
+        {# Tab Headers #}
+        <div class="flex border-b overflow-x-auto">
+            <button 
+                @click="activeTab = 'chapter'" 
+                :class="{ 'border-b-2 border-blue-600 text-blue-600': activeTab === 'chapter', 'text-gray-500 hover:text-gray-700': activeTab !== 'chapter' }"
+                class="px-6 py-3 font-medium text-sm whitespace-nowrap transition-colors"
+            >
+                Capítulo Original
+            </button>
+            {% for word in words %}
+                <button 
+                    @click="activeTab = 'word-{{ word.id }}'" 
+                    :class="{ 'border-b-2 border-blue-600 text-blue-600': activeTab === 'word-{{ word.id }}', 'text-gray-500 hover:text-gray-700': activeTab !== 'word-{{ word.id }}' }"
+                    class="px-6 py-3 font-medium text-sm whitespace-nowrap transition-colors"
+                >
+                    {{ word.wordOriginal }}
+                </button>
+            {% endfor %}
+        </div>
+
+        {# Tab Contents #}
+        <div class="p-6">
+            {# Chapter Tab #}
+            <div x-show="activeTab === 'chapter'" class="space-y-4">
+                <h3 class="text-lg font-bold mb-4">Comparativo do Capítulo</h3>
+                <div class="overflow-x-auto">
+                    <table class="min-w-full divide-y divide-gray-200">
+                        <thead class="bg-gray-50">
+                            <tr>
+                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Verso</th>
+                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Original</th>
+                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Almeida</th>
+                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Nova Tradução</th>
+                            </tr>
+                        </thead>
+                        <tbody class="bg-white divide-y divide-gray-200">
+                            {% for row in chapterData %}
+                                <tr class="{{ row.verse.id == verse.id ? 'bg-yellow-50' : '' }}">
+                                    <td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">{{ row.verse.verse }}</td>
+                                    <td class="px-6 py-4 text-sm text-gray-500 font-serif">{{ row.original ? row.original.text|raw : '-' }}</td>
+                                    <td class="px-6 py-4 text-sm text-gray-500">{{ row.reference ? row.reference.text|raw : '-' }}</td>
+                                    <td class="px-6 py-4 text-sm text-gray-900 font-medium">{{ row.target ? row.target.text|raw : '-' }}</td>
+                                </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
+            {# Word Tabs #}
+            {% for word in words %}
+                <div x-show="activeTab === 'word-{{ word.id }}'" style="display: none;">
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-8">
+                        <div>
+                            <h3 class="text-2xl font-bold text-gray-900 mb-2">{{ word.wordOriginal }}</h3>
+                            <p class="text-lg text-gray-600 mb-4">{{ word.transliteration }}</p>
+                            
+                            {% if word.strongCode %}
+                                <div class="bg-gray-50 p-4 rounded border border-gray-200 mb-4">
+                                    <h4 class="font-bold text-gray-700 mb-2">Strong: {{ word.strongCode.code }}</h4>
+                                    <div class="text-gray-800 mb-2">
+                                        <strong>Definição:</strong> 
+                                        <div class="mt-1">{{ word.strongCode.definition|raw }}</div>
+                                    </div>
+                                    <div class="text-gray-600 text-sm mt-2">{{ word.strongCode.fullDefinition|raw }}</div>
+                                    <div class="mt-4">
+                                        <a href="https://search.nepebrasil.org/strongs/?id={{ word.strongCode.code }}" target="_blank" class="text-blue-600 hover:underline text-sm">
+                                            Ver no NEPE &rarr;
+                                        </a>
+                                    </div>
+                                </div>
+                            {% else %}
+                                <p class="text-gray-500 italic">Sem código Strong associado.</p>
+                            {% endif %}
+                        </div>
+
+                        <div>
+                            <h4 class="font-bold text-gray-900 mb-4">Ocorrências ({{ occurrences[word.id]|default([])|length }})</h4>
+                            {% if occurrences[word.id] is defined and occurrences[word.id]|length > 0 %}
+                                <div class="space-y-2 max-h-96 overflow-y-auto">
+                                    {% for occ in occurrences[word.id] %}
+                                        <div class="bg-gray-50 p-3 rounded text-sm hover:bg-gray-100 transition-colors">
+                                            <a href="{{ path('app_translation_verse', {bookId: occ.verse.book.id, chapter: occ.verse.chapter, verseNum: occ.verse.verse}) }}" class="flex justify-between items-center text-gray-700 hover:text-blue-600">
+                                                <span class="font-medium">{{ occ.verse.book.name }} {{ occ.verse.chapter }}:{{ occ.verse.verse }}</span>
+                                                <span class="font-serif text-gray-500">{{ occ.wordOriginal }}</span>
+                                            </a>
+                                        </div>
+                                    {% endfor %}
+                                </div>
+                            {% else %}
+                                <p class="text-gray-500 italic">Nenhuma outra ocorrência encontrada.</p>
+                            {% endif %}
+                        </div>
+                    </div>
+                </div>
+            {% endfor %}
+        </div>
+    </div>
+</div>
+
+{# Simple Alpine.js replacement since I am not sure if Alpine is installed #}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // Simple tab logic
+    const buttons = document.querySelectorAll('[x-data] button');
+    const contents = document.querySelectorAll('[x-data] > div.p-6 > div');
+
+    buttons.forEach(btn => {
+        btn.addEventListener('click', () => {
+            // Reset all
+            buttons.forEach(b => {
+                b.classList.remove('border-b-2', 'border-blue-600', 'text-blue-600');
+                b.classList.add('text-gray-500', 'hover:text-gray-700');
+            });
+            contents.forEach(c => c.style.display = 'none');
+
+            // Activate clicked
+            btn.classList.remove('text-gray-500', 'hover:text-gray-700');
+            btn.classList.add('border-b-2', 'border-blue-600', 'text-blue-600');
+            
+            // Show content
+            // Extract target from @click attribute (hacky but works for this simple case)
+            const clickAttr = btn.getAttribute('@click');
+            const targetId = clickAttr.match(/'([^']+)'/)[1];
+            
+            // Find content div
+            // I need a way to identify content divs. 
+            // I used x-show="activeTab === '...'"
+            // Let's use that.
+            contents.forEach(c => {
+                if (c.getAttribute('x-show').includes(`'${targetId}'`)) {
+                    c.style.display = 'block';
+                }
+            });
+        });
+    });
+
+    // Activate first tab
+    if (buttons.length > 0) {
+        buttons[0].click();
+    }
+});
+</script>
+{% endblock %}

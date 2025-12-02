@@ -58,3 +58,10 @@ Quando fizer isso, automaticamente cadastrará os dados do texto de referência 
 ## Cadastro de referências Globais
 
 Quando for cadastrar uma referência global, o usuário deve informar o Vocábulo e o Texto da Referência.
+
+
+# Sobre a tradução
+A tradução atual é da versão do Haroldo Dutra. Dessa forma, toda vez que o usuário for cadastrar, editar ou visualizar uma tradução, o sistema irá editar um registro de verse_text (gerando um histórico de versículos traduzidos) irá editar um registro com o version_id = 17 ((HD) - Haroldo Dutra).
+Quando falamos da tradução do almeida, ela é a version_id = 1.
+Agora, quando falamos do texto original, se for o novo testamento, ele é o version_id = 18 ((BGB) - Bíblia Grega Bereana), mas se for do velho testamento, ele é o version_id = 19 (HSB) Hebrew Study Bible.
+A porcentagem de conclusão de livros e capítulos é calculada com base na quantidade total de versículos no livro ou capítulo e a quantidade de versículos já traduzidos, ou seja, existentes em  version_id = 17 ((HD) - Haroldo Dutra).

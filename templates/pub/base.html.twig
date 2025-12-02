@@ -27,6 +27,12 @@
                             <p class="text-sm text-slate-500 dark:text-slate-400">Tailwind + Symfony starter</p>
                         </div>
                     </div>
+                    
+                    <nav class="hidden md:flex items-center gap-6 text-sm font-medium text-slate-600 dark:text-slate-300">
+                        <a href="{{ path('app_dashboard') }}" class="hover:text-slate-900 dark:hover:text-white transition-colors">Dashboard</a>
+                        <a href="{{ path('app_global_reference_index') }}" class="hover:text-slate-900 dark:hover:text-white transition-colors">Ref. Globais</a>
+                    </nav>
+
                     <div class="flex items-center gap-2 text-xs font-medium">
                         <button type="button" onclick="lightMode()" class="rounded-full border border-slate-900/10 px-3 py-1 text-slate-600 transition hover:border-slate-900/30 hover:text-slate-900 dark:border-white/10 dark:text-slate-300 dark:hover:border-white/30 dark:hover:text-white">
                             Claro

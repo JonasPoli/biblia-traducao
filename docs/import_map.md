@@ -105,7 +105,7 @@ Mantém-se conforme análise anterior, mas vinculando ao `biblia_verse_ext` (Ver
 | `strong_id` | `strong_code` | Link para definição Strong |
 | `greek_word` | `greekWord` | Palavra no texto original (Grego) |
 | `hebrew_word` | `hebrewWord` | Palavra no texto original (Hebraico) |
-| `portuguese_word` | `wordPt` | Tradução literal |
+| `portuguese_word` | `wordPortuguese` | Tradução literal |
 | `transliteral` | `transliteration` | |
 | `english_type` | `englishType` | |
 | `portuguese_type` | `portugueseType` | |

@@ -31,10 +31,10 @@ Criar as entidades Doctrine revisadas:
     - [ ] FK `user`
     - [ ] `created_at`
 - [ ] `StrongDefinition`: codigo, palavra em hebreu, palavra em grego, translitreal, definicao completa.
-- [ ] `VerseWord` (Interlinear): FK `verse`, FK `strong`, palavra em hebreu, palavra em grego, translitreal, english_type, tipo em portugues, tradução.
+- [ ] `VerseWord` (Interlinear): FK `verse`, FK `strong`, palavra em hebreu, palavra em grego, translitreal, english_type, type_portuguese, tradução.
 - [ ] `Reference` (Referências):
-    - [ ] `VerseReference`: FK `verse`, vocabulo, texto_referencia.
-    - [ ] `GlobalReference`: vocabulo, texto_referencia.
+    - [ ] `VerseReference`: FK `verse`, term, reference_text.
+    - [ ] `GlobalReference`: term, reference_text.
 
 ## 3. Importação de Dados
 - [ ] Criar comando `app:import-legacy`.

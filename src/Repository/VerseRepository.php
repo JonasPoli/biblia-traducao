@@ -15,4 +15,23 @@ class VerseRepository extends ServiceEntityRepository
     {
         parent::__construct($registry, Verse::class);
     }
+
+    /**
+     * @return Verse[]
+     */
+    public function getVersesForTranslation(int $bookId, int $chapter, array $versionIds): array
+    {
+        return $this->createQueryBuilder('v')
+            ->leftJoin('v.verseTexts', 'vt')
+            ->addSelect('vt')
+            ->where('v.book = :bookId')
+            ->andWhere('v.chapter = :chapter')
+            ->andWhere('vt.version IN (:versionIds) OR vt.version IS NULL')
+            ->setParameter('bookId', $bookId)
+            ->setParameter('chapter', $chapter)
+            ->setParameter('versionIds', $versionIds)
+            ->orderBy('v.verse', 'ASC')
+            ->getQuery()
+            ->getResult();
+    }
 }

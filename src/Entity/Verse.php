@@ -3,6 +3,8 @@
 namespace App\Entity;
 
 use App\Repository\VerseRepository;
+use Doctrine\Common\Collections\ArrayCollection;
+use Doctrine\Common\Collections\Collection;
 use Doctrine\ORM\Mapping as ORM;
 
 #[ORM\Entity(repositoryClass: VerseRepository::class)]
@@ -22,6 +24,17 @@ class Verse
 
     #[ORM\Column]
     private ?int $verse = null;
+
+    /**
+     * @var Collection<int, VerseText>
+     */
+    #[ORM\OneToMany(targetEntity: VerseText::class, mappedBy: 'verse')]
+    private Collection $verseTexts;
+
+    public function __construct()
+    {
+        $this->verseTexts = new ArrayCollection();
+    }
 
     public function getId(): ?int
     {
@@ -62,5 +75,13 @@ class Verse
         $this->verse = $verse;
 
         return $this;
+    }
+
+    /**
+     * @return Collection<int, VerseText>
+     */
+    public function getVerseTexts(): Collection
+    {
+        return $this->verseTexts;
     }
 }

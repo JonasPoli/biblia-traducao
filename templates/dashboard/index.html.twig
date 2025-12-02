@@ -1,0 +1,67 @@
+{% extends 'admin/base.html.twig' %}
+
+{% block title %}Dashboard - Tradução Bíblica{% endblock %}
+
+{% block body %}
+<div class="container mx-auto px-4 py-8">
+    <div class="mb-8 flex items-center justify-between">
+        <h1 class="text-3xl font-bold text-gray-800">Dashboard de Tradução</h1>
+    </div>
+
+    {# Stats Section #}
+    <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
+        <div class="bg-white p-6 rounded-lg shadow-sm border border-gray-100">
+            <h3 class="text-sm font-semibold text-gray-500 uppercase mb-2">Total de Versículos</h3>
+            <p class="text-3xl font-bold text-gray-900">{{ stats.total }}</p>
+        </div>
+        <div class="bg-white p-6 rounded-lg shadow-sm border border-gray-100">
+            <h3 class="text-sm font-semibold text-gray-500 uppercase mb-2">Versículos Traduzidos</h3>
+            <p class="text-3xl font-bold text-green-600">{{ stats.translated }}</p>
+        </div>
+        <div class="bg-white p-6 rounded-lg shadow-sm border border-gray-100">
+            <h3 class="text-sm font-semibold text-gray-500 uppercase mb-2">Progresso Geral</h3>
+            <div class="flex items-end gap-2">
+                <p class="text-3xl font-bold text-blue-600">
+                    {% if stats.total > 0 %}
+                        {{ ((stats.translated / stats.total) * 100)|number_format(1) }}%
+                    {% else %}
+                        0%
+                    {% endif %}
+                </p>
+            </div>
+            <div class="w-full bg-gray-200 rounded-full h-2.5 mt-2">
+                <div class="bg-blue-600 h-2.5 rounded-full" style="width: {{ stats.total > 0 ? (stats.translated / stats.total) * 100 : 0 }}%"></div>
+            </div>
+        </div>
+    </div>
+
+    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+        {% for book in books %}
+            {% set percentage = book.total > 0 ? (book.translated / book.total * 100)|round(1) : 0 %}
+            
+            <a href="{{ path('app_dashboard_chapters', {id: book.id}) }}" class="block bg-white rounded-lg shadow-md hover:shadow-lg transition-shadow duration-300 overflow-hidden border border-gray-100">
+                <div class="p-6">
+                    <div class="flex justify-between items-center mb-4">
+                        <h2 class="text-xl font-semibold text-gray-900">{{ book.name }}</h2>
+                        <span class="text-sm font-medium text-gray-500 bg-gray-100 px-2 py-1 rounded">{{ book.abbreviation }}</span>
+                    </div>
+
+                    <div class="mb-2 flex justify-between text-sm text-gray-600">
+                        <span>Progresso</span>
+                        <span class="font-medium">{{ percentage }}%</span>
+                    </div>
+
+                    <div class="w-full bg-gray-200 rounded-full h-2.5 mb-4">
+                        <div class="bg-blue-600 h-2.5 rounded-full" style="width: {{ percentage }}%"></div>
+                    </div>
+
+                    <div class="text-xs text-gray-500 flex justify-between">
+                        <span>{{ book.translated }} traduzidos</span>
+                        <span>Total: {{ book.total }}</span>
+                    </div>
+                </div>
+            </a>
+        {% endfor %}
+    </div>
+</div>
+{% endblock %}
