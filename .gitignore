@@ -37,3 +37,8 @@ composer.phar
 .idea/
 **/._*
 ._*
+
+./sql
+./sql/*
+/sql/*
+sql
