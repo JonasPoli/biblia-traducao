@@ -37,6 +37,17 @@
                     data-controller="translation"
                     data-action="submit->translation#save"
                 >
+                    <div class="mb-4">
+                        <label class="block text-xs font-semibold text-gray-500 uppercase mb-1">Assunto</label>
+                        <input 
+                            type="text" 
+                            name="title" 
+                            value="{{ texts.target ? texts.target.title : '' }}"
+                            class="w-full p-2 border border-gray-300 rounded focus:ring-2 focus:ring-green-500 focus:border-transparent text-sm"
+                            placeholder="Assunto do versículo..."
+                        >
+                    </div>
+
                     <textarea 
                         name="text" 
                         rows="6" 
@@ -56,188 +67,465 @@
                 <div class="mt-8 pt-6 border-t border-gray-200">
                     <h3 class="text-xs font-semibold text-gray-500 uppercase mb-4">Referências Cruzadas</h3>
                     
-                    <div class="space-y-3 mb-6">
-                        {% for ref in references %}
-                            <div class="bg-gray-50 p-3 rounded text-sm flex justify-between items-start group">
-                                <div>
-                                    <span class="font-bold text-gray-700 block">{{ ref.term }}</span>
-                                    <span class="text-gray-600">{{ ref.referenceText }}</span>
-                                </div>
-                                <form action="{{ path('app_translation_reference_delete', {id: ref.id}) }}" method="POST" onsubmit="return confirm('Tem certeza?');">
-                                    <button type="submit" class="text-red-400 hover:text-red-600 opacity-0 group-hover:opacity-100 transition-opacity px-2">
-                                        &times;
-                                    </button>
-                                </form>
-                            </div>
-                        {% else %}
-                            <p class="text-sm text-gray-400 italic">Nenhuma referência cadastrada.</p>
-                        {% endfor %}
-                    </div>
-
-                    <form action="{{ path('app_translation_reference_add', {verseId: verse.id}) }}" method="POST" class="bg-gray-50 p-4 rounded border border-gray-200">
-                        <h4 class="text-sm font-semibold text-gray-700 mb-3">Adicionar Referência</h4>
-                        <div class="space-y-3">
-                            <div>
-                                <label class="block text-xs text-gray-500 mb-1">Vocábulo (Palavra Chave)</label>
-                                <input type="text" name="term" class="w-full p-2 border border-gray-300 rounded text-sm" required>
-                            </div>
-                            <div>
-                                <label class="block text-xs text-gray-500 mb-1">Texto da Referência</label>
-                                <textarea name="referenceText" rows="2" class="w-full p-2 border border-gray-300 rounded text-sm" required></textarea>
-                            </div>
-                            <button type="submit" class="w-full bg-blue-600 hover:bg-blue-700 text-white text-sm px-3 py-2 rounded transition-colors">
-                                Adicionar Referência
+                    {# Specific References #}
+                    <div class="mb-6">
+                        <div class="flex justify-between items-center mb-2">
+                            <h4 class="text-sm font-semibold text-gray-700">Específicas</h4>
+                            <button onclick="document.getElementById('add-specific-ref-modal').showModal()" class="text-xs bg-blue-100 text-blue-700 px-2 py-1 rounded hover:bg-blue-200">
+                                + Adicionar
                             </button>
                         </div>
-                    </form>
-                </div>
-            </div>
-        </div>
-    </div>
-
-    {# Tabs Section #}
-    <div x-data="{ activeTab: 'chapter' }" class="bg-white rounded-lg shadow-md border border-gray-100 overflow-hidden">
-        {# Tab Headers #}
-        <div class="flex border-b overflow-x-auto">
-            <button 
-                @click="activeTab = 'chapter'" 
-                :class="{ 'border-b-2 border-blue-600 text-blue-600': activeTab === 'chapter', 'text-gray-500 hover:text-gray-700': activeTab !== 'chapter' }"
-                class="px-6 py-3 font-medium text-sm whitespace-nowrap transition-colors"
-            >
-                Capítulo Original
-            </button>
-            {% for word in words %}
-                <button 
-                    @click="activeTab = 'word-{{ word.id }}'" 
-                    :class="{ 'border-b-2 border-blue-600 text-blue-600': activeTab === 'word-{{ word.id }}', 'text-gray-500 hover:text-gray-700': activeTab !== 'word-{{ word.id }}' }"
-                    class="px-6 py-3 font-medium text-sm whitespace-nowrap transition-colors"
-                >
-                    {{ word.wordOriginal }}
-                </button>
-            {% endfor %}
-        </div>
-
-        {# Tab Contents #}
-        <div class="p-6">
-            {# Chapter Tab #}
-            <div x-show="activeTab === 'chapter'" class="space-y-4">
-                <h3 class="text-lg font-bold mb-4">Comparativo do Capítulo</h3>
-                <div class="overflow-x-auto">
-                    <table class="min-w-full divide-y divide-gray-200">
-                        <thead class="bg-gray-50">
-                            <tr>
-                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Verso</th>
-                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Original</th>
-                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Almeida</th>
-                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Nova Tradução</th>
-                            </tr>
-                        </thead>
-                        <tbody class="bg-white divide-y divide-gray-200">
-                            {% for row in chapterData %}
-                                <tr class="{{ row.verse.id == verse.id ? 'bg-yellow-50' : '' }}">
-                                    <td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">{{ row.verse.verse }}</td>
-                                    <td class="px-6 py-4 text-sm text-gray-500 font-serif">{{ row.original ? row.original.text|raw : '-' }}</td>
-                                    <td class="px-6 py-4 text-sm text-gray-500">{{ row.reference ? row.reference.text|raw : '-' }}</td>
-                                    <td class="px-6 py-4 text-sm text-gray-900 font-medium">{{ row.target ? row.target.text|raw : '-' }}</td>
-                                </tr>
+                        <div class="space-y-2">
+                            {% for ref in references %}
+                                <div class="bg-gray-50 p-3 rounded text-sm flex justify-between items-start group border border-gray-200">
+                                    <div>
+                                        <span class="font-bold text-gray-700 block">{{ ref.term }}</span>
+                                        <span class="text-gray-600">{{ ref.referenceText|raw }}</span>
+                                    </div>
+                                    <div class="flex gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
+                                        <button onclick="openEditSpecificModal('{{ ref.id }}', '{{ ref.term|escape('js') }}', '{{ ref.referenceText|escape('js') }}')" class="text-blue-500 hover:text-blue-700">
+                                            <sl-icon name="pencil"></sl-icon>
+                                        </button>
+                                        <form action="{{ path('app_translation_reference_delete', {id: ref.id}) }}" method="POST" onsubmit="return confirm('Tem certeza?');" class="inline">
+                                            <button type="submit" class="text-red-400 hover:text-red-600">
+                                                <sl-icon name="trash"></sl-icon>
+                                            </button>
+                                        </form>
+                                    </div>
+                                </div>
+                            {% else %}
+                                <p class="text-sm text-gray-400 italic">Nenhuma referência específica.</p>
                             {% endfor %}
-                        </tbody>
-                    </table>
-                </div>
-            </div>
-
-            {# Word Tabs #}
-            {% for word in words %}
-                <div x-show="activeTab === 'word-{{ word.id }}'" style="display: none;">
-                    <div class="grid grid-cols-1 md:grid-cols-2 gap-8">
-                        <div>
-                            <h3 class="text-2xl font-bold text-gray-900 mb-2">{{ word.wordOriginal }}</h3>
-                            <p class="text-lg text-gray-600 mb-4">{{ word.transliteration }}</p>
-                            
-                            {% if word.strongCode %}
-                                <div class="bg-gray-50 p-4 rounded border border-gray-200 mb-4">
-                                    <h4 class="font-bold text-gray-700 mb-2">Strong: {{ word.strongCode.code }}</h4>
-                                    <div class="text-gray-800 mb-2">
-                                        <strong>Definição:</strong> 
-                                        <div class="mt-1">{{ word.strongCode.definition|raw }}</div>
-                                    </div>
-                                    <div class="text-gray-600 text-sm mt-2">{{ word.strongCode.fullDefinition|raw }}</div>
-                                    <div class="mt-4">
-                                        <a href="https://search.nepebrasil.org/strongs/?id={{ word.strongCode.code }}" target="_blank" class="text-blue-600 hover:underline text-sm">
-                                            Ver no NEPE &rarr;
-                                        </a>
-                                    </div>
-                                </div>
-                            {% else %}
-                                <p class="text-gray-500 italic">Sem código Strong associado.</p>
-                            {% endif %}
                         </div>
+                    </div>
 
-                        <div>
-                            <h4 class="font-bold text-gray-900 mb-4">Ocorrências ({{ occurrences[word.id]|default([])|length }})</h4>
-                            {% if occurrences[word.id] is defined and occurrences[word.id]|length > 0 %}
-                                <div class="space-y-2 max-h-96 overflow-y-auto">
-                                    {% for occ in occurrences[word.id] %}
-                                        <div class="bg-gray-50 p-3 rounded text-sm hover:bg-gray-100 transition-colors">
-                                            <a href="{{ path('app_translation_verse', {bookId: occ.verse.book.id, chapter: occ.verse.chapter, verseNum: occ.verse.verse}) }}" class="flex justify-between items-center text-gray-700 hover:text-blue-600">
-                                                <span class="font-medium">{{ occ.verse.book.name }} {{ occ.verse.chapter }}:{{ occ.verse.verse }}</span>
-                                                <span class="font-serif text-gray-500">{{ occ.wordOriginal }}</span>
-                                            </a>
-                                        </div>
-                                    {% endfor %}
+                    {# Global References #}
+                    <div>
+                        <div class="flex justify-between items-center mb-2">
+                            <h4 class="text-sm font-semibold text-gray-700">Globais</h4>
+                            <button onclick="document.getElementById('add-global-ref-modal').showModal()" class="text-xs bg-purple-100 text-purple-700 px-2 py-1 rounded hover:bg-purple-200">
+                                + Adicionar
+                            </button>
+                        </div>
+                        <div class="space-y-2">
+                            {% for gRef in globalReferences %}
+                                <div class="bg-purple-50 p-3 rounded text-sm flex justify-between items-start group border border-purple-100">
+                                    <div>
+                                        <span class="font-bold text-purple-900 block">{{ gRef.term }} <span class="text-xs font-normal text-purple-600">({{ gRef.foreignWord }})</span></span>
+                                        <span class="text-purple-800">{{ gRef.referenceText|raw }}</span>
+                                    </div>
+                                    <div class="flex gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
+                                        <button onclick="openEditGlobalModal('{{ gRef.id }}', '{{ gRef.term|escape('js') }}', '{{ gRef.referenceText|escape('js') }}', '{{ gRef.foreignWord|escape('js') }}')" class="text-blue-500 hover:text-blue-700">
+                                            <sl-icon name="pencil"></sl-icon>
+                                        </button>
+                                        <form action="{{ path('app_translation_global_reference_delete', {id: gRef.id}) }}" method="POST" onsubmit="return confirm('Tem certeza?');" class="inline">
+                                            <input type="hidden" name="redirect_book_id" value="{{ book.id }}">
+                                            <input type="hidden" name="redirect_chapter" value="{{ chapter }}">
+                                            <input type="hidden" name="redirect_verse_num" value="{{ verse.verse }}">
+                                            <button type="submit" class="text-red-400 hover:text-red-600">
+                                                <sl-icon name="trash"></sl-icon>
+                                            </button>
+                                        </form>
+                                    </div>
                                 </div>
                             {% else %}
-                                <p class="text-gray-500 italic">Nenhuma outra ocorrência encontrada.</p>
-                            {% endif %}
+                                <p class="text-sm text-gray-400 italic">Nenhuma referência global ativa para este versículo.</p>
+                            {% endfor %}
                         </div>
                     </div>
                 </div>
-            {% endfor %}
+
+                {# Modals #}
+                <dialog id="add-specific-ref-modal" class="p-0 rounded-lg shadow-xl backdrop:bg-gray-900/50 w-full max-w-md">
+                    <div class="p-6">
+                        <h3 class="text-lg font-bold mb-4">Adicionar Referência Específica</h3>
+                        <form action="{{ path('app_translation_reference_add', {verseId: verse.id}) }}" method="POST">
+                            <div class="space-y-4">
+                                <div>
+                                    <label class="block text-sm font-medium text-gray-700 mb-1">Termo</label>
+                                    <input type="text" name="term" id="add-specific-term" class="w-full p-2 border rounded" required>
+                                </div>
+                                <div>
+                                    <label class="block text-sm font-medium text-gray-700 mb-1">Referência</label>
+                                    <textarea name="referenceText" id="add-specific-text" rows="3" class="w-full p-2 border rounded tinymce"></textarea>
+                                </div>
+                                <div class="flex justify-end gap-2">
+                                    <button type="button" onclick="document.getElementById('add-specific-ref-modal').close()" class="px-4 py-2 text-gray-600 hover:bg-gray-100 rounded">Cancelar</button>
+                                    <button type="submit" class="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700">Salvar</button>
+                                </div>
+                            </div>
+                        </form>
+                    </div>
+                </dialog>
+
+                <dialog id="edit-specific-ref-modal" class="p-0 rounded-lg shadow-xl backdrop:bg-gray-900/50 w-full max-w-md">
+                    <div class="p-6">
+                        <h3 class="text-lg font-bold mb-4">Editar Referência Específica</h3>
+                        <form id="edit-specific-form" method="POST">
+                            <div class="space-y-4">
+                                <div>
+                                    <label class="block text-sm font-medium text-gray-700 mb-1">Termo</label>
+                                    <input type="text" name="term" id="edit-specific-term" class="w-full p-2 border rounded" required>
+                                </div>
+                                <div>
+                                    <label class="block text-sm font-medium text-gray-700 mb-1">Referência</label>
+                                    <textarea name="referenceText" id="edit-specific-text" rows="3" class="w-full p-2 border rounded tinymce"></textarea>
+                                </div>
+                                <div class="flex justify-end gap-2">
+                                    <button type="button" onclick="document.getElementById('edit-specific-ref-modal').close()" class="px-4 py-2 text-gray-600 hover:bg-gray-100 rounded">Cancelar</button>
+                                    <button type="submit" class="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700">Salvar</button>
+                                </div>
+                            </div>
+                        </form>
+                    </div>
+                </dialog>
+
+                <dialog id="add-global-ref-modal" class="p-0 rounded-lg shadow-xl backdrop:bg-gray-900/50 w-full max-w-md">
+                    <div class="p-6">
+                        <h3 class="text-lg font-bold mb-4">Adicionar Referência Global</h3>
+                        <form action="{{ path('app_translation_global_reference_add', {verseId: verse.id}) }}" method="POST">
+                            <input type="hidden" name="strongId" id="add-global-strongId">
+                            <div class="space-y-4">
+                                <div>
+                                    <label class="block text-sm font-medium text-gray-700 mb-1">Termo</label>
+                                    <input type="text" name="term" id="add-global-term" class="w-full p-2 border rounded" required>
+                                </div>
+                                <div>
+                                    <label class="block text-sm font-medium text-gray-700 mb-1">Palavra Estrangeira (Filtro)</label>
+                                    <input type="text" name="foreignWord" id="add-global-foreign" class="w-full p-2 border rounded">
+                                    <p class="text-xs text-gray-500 mt-1">A referência só aparecerá se esta palavra estiver no texto original.</p>
+                                </div>
+                                <div>
+                                    <label class="block text-sm font-medium text-gray-700 mb-1">Referência</label>
+                                    <textarea name="referenceText" id="add-global-text" rows="3" class="w-full p-2 border rounded tinymce"></textarea>
+                                </div>
+                                <div class="flex justify-end gap-2">
+                                    <button type="button" onclick="document.getElementById('add-global-ref-modal').close()" class="px-4 py-2 text-gray-600 hover:bg-gray-100 rounded">Cancelar</button>
+                                    <button type="submit" class="px-4 py-2 bg-purple-600 text-white rounded hover:bg-purple-700">Salvar</button>
+                                </div>
+                            </div>
+                        </form>
+                    </div>
+                </dialog>
+
+                <dialog id="edit-global-ref-modal" class="p-0 rounded-lg shadow-xl backdrop:bg-gray-900/50 w-full max-w-md">
+                    <div class="p-6">
+                        <h3 class="text-lg font-bold mb-4">Editar Referência Global</h3>
+                        <form id="edit-global-form" method="POST">
+                            <input type="hidden" name="redirect_book_id" value="{{ book.id }}">
+                            <input type="hidden" name="redirect_chapter" value="{{ chapter }}">
+                            <input type="hidden" name="redirect_verse_num" value="{{ verse.verse }}">
+                            <div class="space-y-4">
+                                <div>
+                                    <label class="block text-sm font-medium text-gray-700 mb-1">Termo</label>
+                                    <input type="text" name="term" id="edit-global-term" class="w-full p-2 border rounded" required>
+                                </div>
+                                <div>
+                                    <label class="block text-sm font-medium text-gray-700 mb-1">Palavra Estrangeira (Filtro)</label>
+                                    <input type="text" name="foreignWord" id="edit-global-foreign" class="w-full p-2 border rounded">
+                                </div>
+                                <div>
+                                    <label class="block text-sm font-medium text-gray-700 mb-1">Referência</label>
+                                    <textarea name="referenceText" id="edit-global-text" rows="3" class="w-full p-2 border rounded tinymce"></textarea>
+                                </div>
+                                <div class="flex justify-end gap-2">
+                                    <button type="button" onclick="document.getElementById('edit-global-ref-modal').close()" class="px-4 py-2 text-gray-600 hover:bg-gray-100 rounded">Cancelar</button>
+                                    <button type="submit" class="px-4 py-2 bg-purple-600 text-white rounded hover:bg-purple-700">Salvar</button>
+                                </div>
+                            </div>
+                        </form>
+                    </div>
+                </dialog>
+
+                <script>
+                    function openAddGlobalModal(term, foreignWord, strongCode, transliteration, fullDefinition) {
+                        document.getElementById('add-global-term').value = term;
+                        document.getElementById('add-global-foreign').value = foreignWord;
+                        document.getElementById('add-global-strongId').value = strongCode;
+                        
+                        const referenceContent = `<strong>${foreignWord}</strong>&nbsp;<em>(${transliteration})&nbsp;</em> ${fullDefinition}`;
+                        
+                        if (tinymce.get('add-global-text')) {
+                            tinymce.get('add-global-text').setContent(referenceContent);
+                        } else {
+                            document.getElementById('add-global-text').value = referenceContent;
+                        }
+                        
+                        document.getElementById('add-global-ref-modal').showModal();
+                    }
+
+                    function openAddSpecificModal(term, foreignWord, transliteration, fullDefinition) {
+                        document.getElementById('add-specific-term').value = term;
+                        
+                        const referenceContent = `<strong>${foreignWord}</strong>&nbsp;<em>(${transliteration})&nbsp;</em> ${fullDefinition}`;
+                        
+                        if (tinymce.get('add-specific-text')) {
+                            tinymce.get('add-specific-text').setContent(referenceContent);
+                        } else {
+                            document.getElementById('add-specific-text').value = referenceContent;
+                        }
+                        
+                        document.getElementById('add-specific-ref-modal').showModal();
+                    }
+
+                    function openEditGlobalModal(id, term, text, foreign) {
+                        document.getElementById('edit-global-form').action = '/admin/translation/global-reference/edit/' + id;
+                        document.getElementById('edit-global-term').value = term;
+                        document.getElementById('edit-global-foreign').value = foreign;
+                        
+                        // Set content in TinyMCE if initialized, otherwise set textarea value
+                        if (tinymce.get('edit-global-text')) {
+                            tinymce.get('edit-global-text').setContent(text);
+                        } else {
+                            document.getElementById('edit-global-text').value = text;
+                        }
+                        
+                        document.getElementById('edit-global-ref-modal').showModal();
+                    }
+                    function openEditSpecificModal(id, term, text) {
+                        document.getElementById('edit-specific-form').action = '/admin/translation/reference/edit/' + id;
+                        document.getElementById('edit-specific-term').value = term;
+                        
+                        // Set content in TinyMCE if initialized, otherwise set textarea value
+                        if (tinymce.get('edit-specific-text')) {
+                            tinymce.get('edit-specific-text').setContent(text);
+                        } else {
+                            document.getElementById('edit-specific-text').value = text;
+                        }
+                        
+                        document.getElementById('edit-specific-ref-modal').showModal();
+                    }
+                </script>
+            </div>
         </div>
     </div>
-</div>
 
-{# Simple Alpine.js replacement since I am not sure if Alpine is installed #}
-<script>
-document.addEventListener('DOMContentLoaded', function() {
-    // Simple tab logic
-    const buttons = document.querySelectorAll('[x-data] button');
-    const contents = document.querySelectorAll('[x-data] > div.p-6 > div');
+            {# Tabs Section #}
+            <div x-data="{ activeTab: 'chapter' }" class="bg-white rounded-lg shadow-md border border-gray-100 overflow-hidden">
+                {# Tab Headers #}
+                <div class="flex border-b overflow-x-auto js-tab-headers">
+                    <button 
+                        data-target="chapter"
+                        class="js-tab-btn px-6 py-3 font-medium text-sm whitespace-nowrap transition-colors border-b-2 border-blue-600 text-blue-600"
+                    >
+                        Capítulo Original
+                    </button>
+                    {% for word in parsedWords %}
+                        <button 
+                            data-target="word-{{ loop.index }}"
+                            class="js-tab-btn px-6 py-3 font-medium text-sm whitespace-nowrap transition-colors text-gray-500 hover:text-gray-700"
+                        >
+                            {{ word.wordOriginal }}
+                        </button>
+                    {% endfor %}
+                </div>
 
-    buttons.forEach(btn => {
-        btn.addEventListener('click', () => {
-            // Reset all
-            buttons.forEach(b => {
-                b.classList.remove('border-b-2', 'border-blue-600', 'text-blue-600');
-                b.classList.add('text-gray-500', 'hover:text-gray-700');
+                {# Tab Contents #}
+                <div class="p-6">
+                    {# Chapter Tab #}
+                    <div id="tab-chapter" class="js-tab-content space-y-4">
+                        <h3 class="text-lg font-bold mb-4">Comparativo do Capítulo</h3>
+                        <div class="overflow-x-auto">
+                            <table class="min-w-full divide-y divide-gray-200">
+                                <thead class="bg-gray-50">
+                                    <tr>
+                                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Verso</th>
+                                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Original</th>
+                                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Almeida</th>
+                                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Nova Tradução</th>
+                                    </tr>
+                                </thead>
+                                <tbody class="bg-white divide-y divide-gray-200">
+                                    {% for row in chapterData %}
+                                        <tr class="{{ row.verse.id == verse.id ? 'bg-yellow-50' : '' }}">
+                                            <td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
+                                                <a href="{{ path('app_translation_verse', {bookId: book.id, chapter: chapter, verseNum: row.verse.verse}) }}" class="text-blue-600 hover:underline">
+                                                    {{ row.verse.verse }}
+                                                </a>
+                                            </td>
+                                            <td class="px-6 py-4 text-sm text-gray-500 font-serif">
+                                                {% if row.original_html is defined %}
+                                                    {{ row.original_html|raw }}
+                                                {% else %}
+                                                    {{ row.original ? row.original.text|raw : '-' }}
+                                                {% endif %}
+                                            </td>
+                                            <td class="px-6 py-4 text-sm text-gray-500">
+                                                {% if row.reference_html is defined %}
+                                                    {{ row.reference_html|raw }}
+                                                {% else %}
+                                                    {{ row.reference ? row.reference.text|raw : '-' }}
+                                                {% endif %}
+                                            </td>
+                                            <td class="px-6 py-4 text-sm text-gray-900 font-medium">{{ row.target ? row.target.text|raw : '-' }}</td>
+                                        </tr>
+                                    {% endfor %}
+                                </tbody>
+                            </table>
+                        </div>
+                                <script>
+                            document.addEventListener('DOMContentLoaded', () => {
+                                const strongWords = document.querySelectorAll('.strong-word');
+                                const footer = document.getElementById('strong-definition-footer');
+                                const footerTitle = document.getElementById('strong-footer-title');
+                                const footerTransliteration = document.getElementById('strong-footer-transliteration');
+                                const footerDefinition = document.getElementById('strong-footer-definition');
+                                
+                                const strongDefinitions = {{ strongDefinitions|json_encode|raw }};
+                                
+                                strongWords.forEach(word => {
+                                    word.addEventListener('mouseenter', () => {
+                                        const strongId = word.dataset.strong;
+                                        if (strongId) {
+                                            // Highlight
+                                            document.querySelectorAll(`.strong-word[data-strong="${strongId}"]`).forEach(el => {
+                                                el.classList.add('bg-yellow-200', 'text-gray-900');
+                                            });
+
+                                            // Show Footer Definition
+                                            if (strongDefinitions[strongId]) {
+                                                const def = strongDefinitions[strongId];
+                                                footerTitle.textContent = def.title || '';
+                                                
+                                                let metaText = '';
+                                                if (def.transliteration) metaText += `<span class="italic">${def.transliteration}</span>`;
+                                                if (def.pronunciation) metaText += ` • <span class="text-gray-500">${def.pronunciation}</span>`;
+                                                if (def.lemma) metaText += ` • <span class="font-serif">${def.lemma}</span>`;
+                                                footerTransliteration.innerHTML = metaText;
+
+                                                let defHtml = '';
+                                                if (def.definition) defHtml += `<div class="mb-2 font-medium">${def.definition}</div>`;
+                                                if (def.fullDefinition) defHtml += `<div>${def.fullDefinition}</div>`;
+                                                footerDefinition.innerHTML = defHtml;
+                                                
+                                                footer.classList.remove('translate-y-full');
+                                            }
+                                        }
+                                    });
+                                    
+                                    word.addEventListener('mouseleave', () => {
+                                        const strongId = word.dataset.strong;
+                                        if (strongId) {
+                                            // Remove Highlight
+                                            document.querySelectorAll(`.strong-word[data-strong="${strongId}"]`).forEach(el => {
+                                                el.classList.remove('bg-yellow-200', 'text-gray-900');
+                                            });
+                                            
+                                            // Hide Footer
+                                            footer.classList.add('translate-y-full');
+                                        }
+                                    });
+                                });
+                            });
+                        </script>
+                    </div>
+
+                    {# Strong Definition Footer #}
+                    <div id="strong-definition-footer" class="fixed bottom-0 left-0 right-0 bg-white border-t border-gray-200 shadow-lg transform translate-y-full transition-transform duration-300 z-50 p-4 max-h-64 overflow-y-auto">
+                        <div class="max-w-7xl mx-auto">
+                            <h4 id="strong-footer-title" class="text-xl font-bold text-gray-900"></h4>
+                            <p id="strong-footer-transliteration" class="text-gray-600 italic mb-2"></p>
+                            <div id="strong-footer-definition" class="text-sm text-gray-800"></div>
+                        </div>
+                    </div>
+                    {# Word Tabs #}
+                    {% for word in parsedWords %}
+                        <div id="tab-word-{{ loop.index }}" class="js-tab-content" style="display: none;">
+                            <div class="grid grid-cols-1 md:grid-cols-2 gap-8">
+                                <div>
+                                    <h3 class="text-2xl font-bold text-gray-900 mb-2">{{ word.wordOriginal }}</h3>
+                                    <p class="text-lg text-gray-600 mb-4">{{ word.transliteration }}</p>
+                                    
+                                    {% if word.strongCode %}
+                                        <div class="bg-gray-50 p-4 rounded border border-gray-200 mb-4">
+                                            <h4 class="font-bold text-gray-700 mb-2">Strong: {{ word.strongCode }}</h4>
+                                            <div class="text-gray-800 mb-2">
+                                                <strong>Definição:</strong> 
+                                                <div class="mt-1">{{ word.definition|raw }}</div>
+                                            </div>
+                                            <div class="text-gray-600 text-sm mt-2">{{ word.fullDefinition|raw }}</div>
+                                            <div class="mt-4">
+                                                <a href="https://search.nepebrasil.org/strongs/?id={{ word.strongCode }}" target="_blank" class="text-blue-600 hover:underline text-sm">
+                                                    Ver no NEPE &rarr;
+                                                </a>
+                                            </div>
+                                        </div>
+
+                                        <button 
+                                            onclick="openAddGlobalModal('{{ word.translation|escape('js') }}', '{{ word.wordOriginal|escape('js') }}', '{{ word.strongCode|escape('js') }}', '{{ word.transliteration|escape('js') }}', `{{ word.fullDefinition|escape('js') }}`)"
+                                            class="bg-purple-600 hover:bg-purple-700 text-white px-4 py-2 rounded transition-colors w-full flex items-center justify-center gap-2"
+                                        >
+                                            <sl-icon name="plus-circle"></sl-icon>
+                                            Adicionar Referência Global
+                                        </button>
+
+                                        <button 
+                                            onclick="openAddSpecificModal('{{ word.translation|escape('js') }}', '{{ word.wordOriginal|escape('js') }}', '{{ word.transliteration|escape('js') }}', `{{ word.fullDefinition|escape('js') }}`)"
+                                            class="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded transition-colors w-full flex items-center justify-center gap-2 mt-2"
+                                        >
+                                            <sl-icon name="plus-circle"></sl-icon>
+                                            Adicionar Referência Específica
+                                        </button>
+                                    {% else %}
+                                        <p class="text-gray-500 italic">Sem código Strong associado.</p>
+                                    {% endif %}
+                                </div>
+
+                                <div>
+                                    <h4 class="font-bold text-gray-900 mb-4">Ocorrências</h4>
+                                    <p class="text-gray-500 italic">Funcionalidade de ocorrências temporariamente indisponível na nova visualização.</p>
+                                </div>
+                            </div>
+                        </div>
+                    {% endfor %}
+                </div>
+            </div>
+        </div>
+        <div style="height: 500px;"></div>
+
+        {# Debug Info #}
+        <!-- Parsed Words Count: {{ parsedWords|length }} -->
+
+        <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            console.log('Tab script initialized');
+            const buttons = document.querySelectorAll('.js-tab-btn');
+            const contents = document.querySelectorAll('.js-tab-content');
+
+            console.log('Found buttons:', buttons.length);
+            console.log('Found contents:', contents.length);
+
+            buttons.forEach(btn => {
+                btn.addEventListener('click', () => {
+                    const targetId = 'tab-' + btn.dataset.target;
+                    console.log('Clicked tab:', targetId);
+
+                    // Reset buttons
+                    buttons.forEach(b => {
+                        b.classList.remove('border-b-2', 'border-blue-600', 'text-blue-600');
+                        b.classList.add('text-gray-500', 'hover:text-gray-700');
+                    });
+
+                    // Hide contents
+                    contents.forEach(c => c.style.display = 'none');
+
+                    // Activate button
+                    btn.classList.remove('text-gray-500', 'hover:text-gray-700');
+                    btn.classList.add('border-b-2', 'border-blue-600', 'text-blue-600');
+
+                    // Show content
+                    const targetContent = document.getElementById(targetId);
+                    if (targetContent) {
+                        targetContent.style.display = 'block';
+                    } else {
+                        console.error('Target content not found:', targetId);
+                    }
+                });
             });
-            contents.forEach(c => c.style.display = 'none');
-
-            // Activate clicked
-            btn.classList.remove('text-gray-500', 'hover:text-gray-700');
-            btn.classList.add('border-b-2', 'border-blue-600', 'text-blue-600');
-            
-            // Show content
-            // Extract target from @click attribute (hacky but works for this simple case)
-            const clickAttr = btn.getAttribute('@click');
-            const targetId = clickAttr.match(/'([^']+)'/)[1];
-            
-            // Find content div
-            // I need a way to identify content divs. 
-            // I used x-show="activeTab === '...'"
-            // Let's use that.
-            contents.forEach(c => {
-                if (c.getAttribute('x-show').includes(`'${targetId}'`)) {
-                    c.style.display = 'block';
-                }
-            });
+            // Activate first tab
+            if (buttons.length > 0) {
+                buttons[0].click();
+            }
         });
-    });
-
-    // Activate first tab
-    if (buttons.length > 0) {
-        buttons[0].click();
-    }
-});
-</script>
+        </script>
 {% endblock %}

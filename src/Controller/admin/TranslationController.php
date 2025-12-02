@@ -8,6 +8,7 @@ use App\Repository\BibleVersionRepository;
 use App\Repository\BookRepository;
 use App\Repository\VerseRepository;
 use App\Repository\VerseTextRepository;
+use App\Repository\StrongDefinitionRepository;
 use Doctrine\ORM\EntityManagerInterface;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\HttpFoundation\Request;
@@ -38,7 +39,7 @@ final class TranslationController extends AbstractController
         // Or check name? Let's check ID for now as it's standard.
         // Actually, let's check the ID.
         $originalVersionId = ($book->getTestament()->getId() === 1) ? self::OT_ORIGINAL_VERSION_ID : self::NT_ORIGINAL_VERSION_ID;
-
+        // Fetch verses for the chapter, including Version 22 (Almeida + Strongs)
         $versionIds = [
             self::TARGET_VERSION_ID,
             self::REFERENCE_VERSION_ID,
@@ -92,12 +93,12 @@ final class TranslationController extends AbstractController
         }
 
         $text = $request->request->get('text');
-        if ($text === null) {
-            return $this->json(['error' => 'Text is required'], 400);
-        }
+        $title = $request->request->get('title');
 
-        // Find existing translation
-        $verseText = $verseTextRepository->findOneBy([
+        if (!$text) {
+            // Allow saving empty text? Maybe. But let's assume at least something or just handle it.
+            // If empty, it might mean clearing the translation.
+        }$verseText = $verseTextRepository->findOneBy([
             'verse' => $verse,
             'version' => self::TARGET_VERSION_ID
         ]);
@@ -117,30 +118,29 @@ final class TranslationController extends AbstractController
         }
 
         // Check for changes
-        if ($verseText->getText() !== $text) {
+        $textChanged = $verseText->getText() !== $text;
+        $titleChanged = $verseText->getTitle() !== $title;
+
+        if ($textChanged || $titleChanged) {
             // Create history
             $history = new TranslationHistory();
             $history->setVerseText($verseText);
             $history->setOldText($verseText->getText() ?? '');
+            
+            // Note: We are not tracking title history separately for now, 
+            // but the history entry is created if either changes.
 
-            // User? For now we don't have logged in user, or we use a dummy.
-            // Requirement says "usuário com autenticação".
-            // I should get the current user.
             $user = $this->getUser();
             if ($user) {
                 $history->setUser($user);
                 $verseText->setUser($user);
-            } else {
-                // Handle case where no user is logged in (should be protected by firewall)
-                // For now, skip user if null, but entity requires it?
-                // TranslationHistory.user is ManyToOne nullable=false?
-                // Let's check TranslationHistory entity.
             }
 
             $entityManager->persist($history);
 
-            // Update text
+            // Update text and title
             $verseText->setText($text);
+            $verseText->setTitle($title);
             $entityManager->flush();
 
             return $this->json(['status' => 'saved', 'message' => 'Tradução salva com sucesso!']);
@@ -158,7 +158,9 @@ final class TranslationController extends AbstractController
         VerseRepository $verseRepository,
         VerseTextRepository $verseTextRepository,
         \App\Repository\VerseWordRepository $verseWordRepository,
-        \App\Repository\VerseReferenceRepository $verseReferenceRepository
+        \App\Repository\VerseReferenceRepository $verseReferenceRepository,
+        \App\Repository\GlobalReferenceRepository $globalReferenceRepository,
+        StrongDefinitionRepository $strongDefinitionRepository
     ): Response {
         $book = $bookRepository->find($bookId);
         if (!$book) {
@@ -215,12 +217,13 @@ final class TranslationController extends AbstractController
 
         // Fetch Chapter Context (Comparative Table)
         // We can reuse the logic from 'chapter' method but we need to pass it to the view
-        $versionIds = [self::TARGET_VERSION_ID, self::REFERENCE_VERSION_ID, $originalVersionId];
+        $versionIds = [self::TARGET_VERSION_ID, self::REFERENCE_VERSION_ID, $originalVersionId, 22];
         $chapterVerses = $verseRepository->getVersesForTranslation($bookId, $chapter, $versionIds);
 
         $chapterData = [];
         foreach ($chapterVerses as $cv) {
             $item = ['verse' => $cv, 'original' => null, 'reference' => null, 'target' => null];
+            $text22 = null;
             foreach ($cv->getVerseTexts() as $vt) {
                 $vid = $vt->getVersion()->getId();
                 if ($vid === $originalVersionId)
@@ -229,8 +232,128 @@ final class TranslationController extends AbstractController
                     $item['reference'] = $vt;
                 elseif ($vid === self::TARGET_VERSION_ID)
                     $item['target'] = $vt;
+                elseif ($vid === 22)
+                    $text22 = $vt->getText();
             }
+
+            if ($text22) {
+                $originalHtml = '';
+                $referenceHtml = '';
+                
+                // Refined regex to exclude '>' from translation to avoid capturing tags like <pb/> partially
+                preg_match_all('/(?P<translation>[^<>]+)<S>(?P<strongCode>[HG]\d+)<\/S>\s*<n>(?P<original>[^<]+)<\/n>/u', $text22, $matches, PREG_SET_ORDER);
+                
+                foreach ($matches as $match) {
+                    $strongCode = $match['strongCode'];
+                    $originalWord = trim($match['original']);
+                    $translationWord = trim($match['translation']);
+                    
+                    // Clean translation word
+                    $translationWordClean = preg_replace('/[.,!?:;()"\'-]+/', ' ', $translationWord);
+                    // Remove artifacts like pb/, /S, etc.
+                    $translationWordClean = str_replace(['/S>', '<S>', '</S>', 'pb/>', 'pb/'], '', $translationWordClean);
+                    $translationWordClean = trim($translationWordClean);
+
+                    $originalHtml .= "<span class=\"strong-word cursor-pointer hover:bg-yellow-200 transition-colors rounded px-0.5\" data-strong=\"{$strongCode}\">{$originalWord}</span> ";
+                    // Use cleaned translation word
+                    $referenceHtml .= "<span class=\"strong-word cursor-pointer hover:bg-yellow-200 transition-colors rounded px-0.5\" data-strong=\"{$strongCode}\">{$translationWordClean}</span> ";
+                }
+                
+                $item['original_html'] = trim($originalHtml);
+                $item['reference_html'] = trim($referenceHtml);
+            }
+
             $chapterData[] = $item;
+        }
+
+        // Collect all unique Strong codes from the chapter to fetch definitions for the footer
+        $strongCodes = [];
+        foreach ($chapterData as $row) {
+            if (isset($row['original_html'])) {
+                preg_match_all('/data-strong="([^"]+)"/', $row['original_html'], $matches);
+                if (!empty($matches[1])) {
+                    $strongCodes = array_merge($strongCodes, $matches[1]);
+                }
+            }
+        }
+        $strongCodes = array_unique($strongCodes);
+        
+        // Fetch definitions
+        $strongDefinitions = [];
+        if (!empty($strongCodes)) {
+            $definitions = $strongDefinitionRepository->findBy(['code' => $strongCodes]);
+            foreach ($definitions as $def) {
+                $strongDefinitions[$def->getCode()] = [
+                    'title' => $def->getHebrewWord() ?: $def->getGreekWord(),
+                    'transliteration' => $def->getTransliteration(),
+                    'fullDefinition' => $def->getFullDefinition(),
+                    'definition' => $def->getDefinition(),
+                    'pronunciation' => $def->getPronunciation(),
+                    'lemma' => $def->getLemma()
+                ];
+            }
+        }
+
+        // Fetch Global References
+        $allGlobalReferences = $globalReferenceRepository->findAll();
+        $globalReferences = [];
+        
+        // Filter based on Target Translation (Haroldo Dutra)
+        // Check if the GlobalReference 'term' appears in the translation text (case-insensitive)
+        if ($texts['target']) {
+            $targetText = $texts['target']->getText();
+            foreach ($allGlobalReferences as $gr) {
+                if ($gr->getTerm() && stripos($targetText, $gr->getTerm()) !== false) {
+                    $globalReferences[] = $gr;
+                }
+            }
+        }
+
+        // Parse Version 22 (Almeida + Strongs) for Tabs
+        $parsedWords = [];
+        $verseText22 = $verseTextRepository->findOneBy([
+            'verse' => $verse,
+            'version' => 22 // Almeida 21 + Strongs
+        ]);
+
+        if ($verseText22) {
+            $text22 = $verseText22->getText();
+            // Regex to match: Translation<S>StrongCode</S> <n>Original</n>
+            // Note: The text might have extra tags or spaces.
+            // Example: Os homens<S>H582</S> <n>אֱנוֹשׁ</n><S>H582</S>
+            // We capture: Translation (before <S>), StrongCode (inside first <S>), Original (inside <n>)
+            
+            // Refined regex to exclude '>' from translation to avoid capturing tags like <pb/> partially
+            preg_match_all('/(?P<translation>[^<>]+)<S>(?P<strongCode>[HG]\d+)<\/S>\s*<n>(?P<original>[^<]+)<\/n>/u', $text22, $matches, PREG_SET_ORDER);
+
+            foreach ($matches as $match) {
+                $strongCode = $match['strongCode'];
+                $definition = $strongDefinitionRepository->findOneBy(['code' => $strongCode]);
+
+                // Clean translation term: remove punctuation and trim
+                $translation = trim($match['translation']);
+                // Remove common punctuation and extra characters
+                $translation = preg_replace('/[.,!?:;()"\'-]+/', ' ', $translation);
+                // Also remove the specific case mentioned "/S>" if it somehow leaks, though regex should handle it.
+                // And remove pb/> artifacts
+                $translation = str_replace(['/S>', '<S>', '</S>', 'pb/>', 'pb/'], '', $translation);
+                $translation = trim($translation);
+
+                $parsedWords[] = [
+                    'wordOriginal' => trim($match['original']),
+                    'translation' => $translation,
+                    'strongCode' => $strongCode,
+                    'transliteration' => $definition ? $definition->getTransliteration() : '',
+                    'fullDefinition' => $definition ? $definition->getFullDefinition() : '',
+                    'definition' => $definition ? $definition->getDefinition() : '',
+                    'strongDefinition' => $definition
+                ];
+            }
+        } else {
+            // Fallback to existing words if version 22 is missing (though requirement implies it exists)
+            // Or just map existing words to similar structure?
+            // For now, let's stick to parsedWords. If empty, tabs won't show or will use old logic if we keep it.
+            // But we are replacing the tabs logic.
         }
 
         return $this->render('translation/verse.html.twig', [
@@ -238,12 +361,15 @@ final class TranslationController extends AbstractController
             'chapter' => $chapter,
             'verse' => $verse,
             'texts' => $texts,
-            'words' => $words,
+            'words' => $words, // Keeping for backward compat or reference if needed, but tabs will use parsedWords
+            'parsedWords' => $parsedWords,
             'chapterData' => $chapterData,
             'originalVersionId' => $originalVersionId,
             'references' => $references,
+            'globalReferences' => $globalReferences,
             'occurrences' => $occurrences,
             'strongPrefix' => $strongPrefix,
+            'strongDefinitions' => $strongDefinitions,
         ]);
     }
 
@@ -284,6 +410,40 @@ final class TranslationController extends AbstractController
         ]);
     }
 
+    #[Route('/admin/translation/reference/edit/{id}', name: 'app_translation_reference_edit', methods: ['POST'])]
+    public function editReference(
+        int $id,
+        Request $request,
+        \App\Repository\VerseReferenceRepository $verseReferenceRepository,
+        EntityManagerInterface $entityManager
+    ): Response {
+        $ref = $verseReferenceRepository->find($id);
+        if (!$ref) {
+            throw $this->createNotFoundException('Reference not found');
+        }
+
+        $term = $request->request->get('term');
+        $referenceText = $request->request->get('referenceText');
+
+        if ($term && $referenceText) {
+            $ref->setTerm($term);
+            $ref->setReferenceText($referenceText);
+
+            $entityManager->flush();
+
+            $this->addFlash('success', 'Referência atualizada com sucesso!');
+        } else {
+            $this->addFlash('error', 'Preencha todos os campos.');
+        }
+
+        $verse = $ref->getVerse();
+        return $this->redirectToRoute('app_translation_verse', [
+            'bookId' => $verse->getBook()->getId(),
+            'chapter' => $verse->getChapter(),
+            'verseNum' => $verse->getVerse()
+        ]);
+    }
+
     #[Route('/admin/translation/reference/delete/{id}', name: 'app_translation_reference_delete', methods: ['POST'])]
     public function deleteReference(
         int $id,
@@ -306,6 +466,116 @@ final class TranslationController extends AbstractController
             'bookId' => $verse->getBook()->getId(),
             'chapter' => $verse->getChapter(),
             'verseNum' => $verse->getVerse()
+        ]);
+    }
+
+    #[Route('/admin/translation/global-reference/add/{verseId}', name: 'app_translation_global_reference_add', methods: ['POST'])]
+    public function addGlobalReference(
+        int $verseId,
+        Request $request,
+        VerseRepository $verseRepository,
+        \App\Repository\GlobalReferenceRepository $globalReferenceRepository,
+        EntityManagerInterface $entityManager
+    ): Response {
+        $verse = $verseRepository->find($verseId);
+        if (!$verse) {
+            throw $this->createNotFoundException('Verse not found');
+        }
+
+        $term = $request->request->get('term');
+        $referenceText = $request->request->get('referenceText');
+        $foreignWord = $request->request->get('foreignWord');
+        $strongId = $request->request->get('strongId');
+
+        if ($term && $referenceText) {
+            $ref = new \App\Entity\GlobalReference();
+            $ref->setTerm($term);
+            $ref->setReferenceText($referenceText);
+            $ref->setForeignWord($foreignWord);
+            $ref->setStrongId($strongId);
+
+            $entityManager->persist($ref);
+            $entityManager->flush();
+
+            $this->addFlash('success', 'Referência global adicionada com sucesso!');
+        } else {
+            $this->addFlash('error', 'Preencha todos os campos obrigatórios.');
+        }
+
+        return $this->redirectToRoute('app_translation_verse', [
+            'bookId' => $verse->getBook()->getId(),
+            'chapter' => $verse->getChapter(),
+            'verseNum' => $verse->getVerse()
+        ]);
+    }
+
+    #[Route('/admin/translation/global-reference/edit/{id}', name: 'app_translation_global_reference_edit', methods: ['POST'])]
+    public function editGlobalReference(
+        int $id,
+        Request $request,
+        \App\Repository\GlobalReferenceRepository $globalReferenceRepository,
+        EntityManagerInterface $entityManager
+    ): Response {
+        $ref = $globalReferenceRepository->find($id);
+        if (!$ref) {
+            throw $this->createNotFoundException('Global Reference not found');
+        }
+
+        $term = $request->request->get('term');
+        $referenceText = $request->request->get('referenceText');
+        $foreignWord = $request->request->get('foreignWord');
+        
+        // We need verse info to redirect back. Since GlobalReference is not linked to verse,
+        // we must get it from the request (referer or hidden field). 
+        // Let's assume passed as query param or form field for redirection purposes.
+        $bookId = $request->request->get('redirect_book_id');
+        $chapter = $request->request->get('redirect_chapter');
+        $verseNum = $request->request->get('redirect_verse_num');
+
+        if ($term && $referenceText) {
+            $ref->setTerm($term);
+            $ref->setReferenceText($referenceText);
+            $ref->setForeignWord($foreignWord);
+
+            $entityManager->flush();
+
+            $this->addFlash('success', 'Referência global atualizada com sucesso!');
+        } else {
+            $this->addFlash('error', 'Preencha todos os campos obrigatórios.');
+        }
+
+        return $this->redirectToRoute('app_translation_verse', [
+            'bookId' => $bookId,
+            'chapter' => $chapter,
+            'verseNum' => $verseNum
+        ]);
+    }
+
+    #[Route('/admin/translation/global-reference/delete/{id}', name: 'app_translation_global_reference_delete', methods: ['POST'])]
+    public function deleteGlobalReference(
+        int $id,
+        Request $request,
+        \App\Repository\GlobalReferenceRepository $globalReferenceRepository,
+        EntityManagerInterface $entityManager
+    ): Response {
+        $ref = $globalReferenceRepository->find($id);
+        if (!$ref) {
+            throw $this->createNotFoundException('Global Reference not found');
+        }
+
+        $bookId = $request->request->get('redirect_book_id');
+        $chapter = $request->request->get('redirect_chapter');
+        $verseNum = $request->request->get('redirect_verse_num');
+
+        $entityManager->remove($ref);
+        $entityManager->flush();
+
+        $this->addFlash('success', 'Referência global removida com sucesso!');
+
+        return $this->redirectToRoute('app_translation_verse', [
+            'bookId' => $bookId,
+            'chapter' => $chapter,
+            'verseNum' => $verseNum
         ]);
     }
 }

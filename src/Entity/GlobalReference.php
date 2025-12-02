@@ -20,6 +20,12 @@ class GlobalReference
     #[ORM\Column(type: Types::TEXT)]
     private ?string $referenceText = null;
 
+    #[ORM\Column(length: 255, nullable: true)]
+    private ?string $foreignWord = null;
+
+    #[ORM\Column(length: 20, nullable: true)]
+    private ?string $strongId = null;
+
     public function getId(): ?int
     {
         return $this->id;
@@ -45,6 +51,30 @@ class GlobalReference
     public function setReferenceText(string $referenceText): static
     {
         $this->referenceText = $referenceText;
+
+        return $this;
+    }
+
+    public function getForeignWord(): ?string
+    {
+        return $this->foreignWord;
+    }
+
+    public function setForeignWord(?string $foreignWord): static
+    {
+        $this->foreignWord = $foreignWord;
+
+        return $this;
+    }
+
+    public function getStrongId(): ?string
+    {
+        return $this->strongId;
+    }
+
+    public function setStrongId(?string $strongId): static
+    {
+        $this->strongId = $strongId;
 
         return $this;
     }

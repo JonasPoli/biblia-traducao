@@ -30,11 +30,7 @@
                         selector: '.tinymce',
                         height: 300,
                         menubar: false,
-                        plugins: [
-                            'advlist autolink lists link image charmap print preview anchor',
-                            'searchreplace visualblocks code fullscreen',
-                            'insertdatetime media table paste code help wordcount'
-                        ],
+                        plugins: 'advlist autolink lists link image charmap preview anchor searchreplace visualblocks code fullscreen insertdatetime media table code help wordcount',
                         toolbar: 'undo redo | formatselect | ' +
                         'bold italic backcolor | alignleft aligncenter ' +
                         'alignright alignjustify | bullist numlist outdent indent | ' +
@@ -111,16 +107,6 @@
             }
         }
 
-        function toggleDebug() {
-            document.querySelectorAll('.debug-panel').forEach(el => {
-                el.style.display = el.style.display === 'none' ? 'block' : 'none';
-            });
-        }
     </script>
-    <div class="fixed bottom-4 right-4 z-50">
-        <sl-button circle variant="neutral" size="large" onclick="toggleDebug()">
-            <sl-icon name="bug" label="Debug"></sl-icon>
-        </sl-button>
-    </div>
     </body>
 </html>

@@ -1,0 +1,42 @@
+{% extends 'admin/base.html.twig' %}
+
+{% block title %}Detalhes da Tradução{% endblock %}
+
+{% block body %}
+    <sl-card>
+        <div slot="header">
+            <h2 class="text-xl font-bold">Tradução #{{ translation.id }}</h2>
+        </div>
+
+        <table class="table-auto w-full">
+            <tbody>
+                <tr>
+                    <th class="text-left pr-4">Versículo</th>
+                    <td>{{ translation.verseReference ? translation.verseReference.reference : '-' }}</td>
+                </tr>
+                <tr>
+                    <th class="text-left pr-4">Texto</th>
+                    <td>{{ translation.text|raw }}</td>
+                </tr>
+                <tr>
+                    <th class="text-left pr-4">Idioma</th>
+                    <td>{{ translation.language }}</td>
+                </tr>
+                <tr>
+                    <th class="text-left pr-4">Criado em</th>
+                    <td>{{ translation.createdAt|date('d/m/Y H:i') }}</td>
+                </tr>
+                {# Adicione outras colunas conforme necessário #}
+            </tbody>
+        </table>
+
+        <div class="mt-4">
+            <a href="{{ path('app_admin_translation_index') }}">
+                <sl-button variant="neutral" outline>
+                    <sl-icon slot="prefix" name="arrow-left"></sl-icon>
+                    Voltar à lista
+                </sl-button>
+            </a>
+        </div>
+    </sl-card>
+{% endblock %}
