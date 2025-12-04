@@ -43,7 +43,8 @@ final class TranslationController extends AbstractController
         $versionIds = [
             self::TARGET_VERSION_ID,
             self::REFERENCE_VERSION_ID,
-            $originalVersionId
+            $originalVersionId,
+            22 // Almeida + Strongs
         ];
 
         $verses = $verseRepository->getVersesForTranslation($bookId, $chapter, $versionIds);
@@ -55,7 +56,10 @@ final class TranslationController extends AbstractController
                 'original' => null,
                 'reference' => null,
                 'target' => null,
+                'almeida_html' => null,
             ];
+
+            $text22 = null;
 
             foreach ($verse->getVerseTexts() as $vt) {
                 $vid = $vt->getVersion()->getId();
@@ -65,8 +69,32 @@ final class TranslationController extends AbstractController
                     $item['reference'] = $vt;
                 } elseif ($vid === self::TARGET_VERSION_ID) {
                     $item['target'] = $vt;
+                } elseif ($vid === 22) {
+                    $text22 = $vt->getText();
                 }
             }
+
+            if ($text22) {
+                $referenceHtml = '';
+                // Refined regex to exclude '>' from translation to avoid capturing tags like <pb/> partially
+                preg_match_all('/(?P<translation>[^<>]+)<S>(?P<strongCode>[HG]\d+)<\/S>\s*<n>(?P<original>[^<]+)<\/n>/u', $text22, $matches, PREG_SET_ORDER);
+                
+                foreach ($matches as $match) {
+                    $strongCode = $match['strongCode'];
+                    $translationWord = trim($match['translation']);
+                    
+                    // Clean translation word
+                    $translationWordClean = preg_replace('/[.,!?:;()"\'-]+/', ' ', $translationWord);
+                    // Remove artifacts like pb/, /S, etc.
+                    $translationWordClean = str_replace(['/S>', '<S>', '</S>', 'pb/>', 'pb/'], '', $translationWordClean);
+                    $translationWordClean = trim($translationWordClean);
+
+                    // Use cleaned translation word
+                    $referenceHtml .= "<span class=\"strong-word cursor-pointer hover:bg-yellow-200 transition-colors rounded px-0.5\" data-strong=\"{$strongCode}\">{$translationWordClean}</span> ";
+                }
+                $item['almeida_html'] = trim($referenceHtml);
+            }
+
             $data[] = $item;
         }
 
@@ -309,8 +337,9 @@ final class TranslationController extends AbstractController
             }
         }
 
-        // Parse Version 22 (Almeida + Strongs) for Tabs
+        // Parse Version 22 (Almeida + Strongs) for Tabs AND Display
         $parsedWords = [];
+        $almeidaHtml = null;
         $verseText22 = $verseTextRepository->findOneBy([
             'verse' => $verse,
             'version' => 22 // Almeida 21 + Strongs
@@ -318,6 +347,26 @@ final class TranslationController extends AbstractController
 
         if ($verseText22) {
             $text22 = $verseText22->getText();
+            
+            // Generate HTML for display (same logic as chapter view)
+            $referenceHtml = '';
+            preg_match_all('/(?P<translation>[^<>]+)<S>(?P<strongCode>[HG]\d+)<\/S>\s*<n>(?P<original>[^<]+)<\/n>/u', $text22, $matchesHtml, PREG_SET_ORDER);
+            
+            foreach ($matchesHtml as $match) {
+                $strongCode = $match['strongCode'];
+                $translationWord = trim($match['translation']);
+                
+                // Clean translation word
+                $translationWordClean = preg_replace('/[.,!?:;()"\'-]+/', ' ', $translationWord);
+                $translationWordClean = str_replace(['/S>', '<S>', '</S>', 'pb/>', 'pb/'], '', $translationWordClean);
+                $translationWordClean = trim($translationWordClean);
+
+                $referenceHtml .= "<span class=\"strong-word cursor-pointer hover:bg-yellow-200 transition-colors rounded px-0.5\" data-strong=\"{$strongCode}\">{$translationWordClean}</span> ";
+            }
+            $almeidaHtml = trim($referenceHtml);
+
+
+            // Parse for Tabs (existing logic)
             // Regex to match: Translation<S>StrongCode</S> <n>Original</n>
             // Note: The text might have extra tags or spaces.
             // Example: Os homens<S>H582</S> <n>אֱנוֹשׁ</n><S>H582</S>
@@ -349,11 +398,6 @@ final class TranslationController extends AbstractController
                     'strongDefinition' => $definition
                 ];
             }
-        } else {
-            // Fallback to existing words if version 22 is missing (though requirement implies it exists)
-            // Or just map existing words to similar structure?
-            // For now, let's stick to parsedWords. If empty, tabs won't show or will use old logic if we keep it.
-            // But we are replacing the tabs logic.
         }
 
         return $this->render('translation/verse.html.twig', [
@@ -363,6 +407,7 @@ final class TranslationController extends AbstractController
             'texts' => $texts,
             'words' => $words, // Keeping for backward compat or reference if needed, but tabs will use parsedWords
             'parsedWords' => $parsedWords,
+            'almeidaHtml' => $almeidaHtml,
             'chapterData' => $chapterData,
             'originalVersionId' => $originalVersionId,
             'references' => $references,

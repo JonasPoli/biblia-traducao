@@ -37,6 +37,7 @@ composer.phar
 .idea/
 **/._*
 ._*
+.DS_Store
 
 ./sql
 ./sql/*

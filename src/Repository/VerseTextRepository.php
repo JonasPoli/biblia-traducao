@@ -15,4 +15,18 @@ class VerseTextRepository extends ServiceEntityRepository
     {
         parent::__construct($registry, VerseText::class);
     }
+    /**
+     * @return VerseText[]
+     */
+    public function findByVersionAndBook(int $versionId, int $bookId): array
+    {
+        return $this->createQueryBuilder('vt')
+            ->join('vt.verse', 'v')
+            ->andWhere('vt.version = :versionId')
+            ->andWhere('v.book = :bookId')
+            ->setParameter('versionId', $versionId)
+            ->setParameter('bookId', $bookId)
+            ->getQuery()
+            ->getResult();
+    }
 }

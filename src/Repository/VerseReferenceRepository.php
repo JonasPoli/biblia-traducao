@@ -15,4 +15,16 @@ class VerseReferenceRepository extends ServiceEntityRepository
     {
         parent::__construct($registry, VerseReference::class);
     }
+    /**
+     * @return VerseReference[]
+     */
+    public function findByBook(int $bookId): array
+    {
+        return $this->createQueryBuilder('vr')
+            ->join('vr.verse', 'v')
+            ->andWhere('v.book = :bookId')
+            ->setParameter('bookId', $bookId)
+            ->getQuery()
+            ->getResult();
+    }
 }

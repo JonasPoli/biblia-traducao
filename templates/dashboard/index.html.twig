@@ -39,8 +39,8 @@
         {% for book in books %}
             {% set percentage = book.total > 0 ? (book.translated / book.total * 100)|round(1) : 0 %}
             
-            <a href="{{ path('app_dashboard_chapters', {id: book.id}) }}" class="block bg-white rounded-lg shadow-md hover:shadow-lg transition-shadow duration-300 overflow-hidden border border-gray-100">
-                <div class="p-6">
+            <div class="group relative bg-white rounded-lg shadow-md hover:shadow-lg transition-shadow duration-300 overflow-hidden border border-gray-100">
+                <a href="{{ path('app_dashboard_chapters', {id: book.id}) }}" class="block p-6 h-full">
                     <div class="flex justify-between items-center mb-4">
                         <h2 class="text-xl font-semibold text-gray-900">{{ book.name }}</h2>
                         <span class="text-sm font-medium text-gray-500 bg-gray-100 px-2 py-1 rounded">{{ book.abbreviation }}</span>
@@ -59,8 +59,18 @@
                         <span>{{ book.translated }} traduzidos</span>
                         <span>Total: {{ book.total }}</span>
                     </div>
+                </a>
+                
+                {# Print Icon (Visible on Hover) #}
+                <div class="absolute top-4 right-4 opacity-0 group-hover:opacity-100 transition-opacity duration-200 flex gap-2">
+                    <a href="{{ path('app_bible_download_latex', {bookId: book.id}) }}" class="text-gray-500 hover:text-gray-800 bg-white/80 rounded-full p-1" title="Baixar LaTeX">
+                        <sl-icon name="file-earmark-code" class="text-xl"></sl-icon>
+                    </a>
+                    <a href="{{ path('app_bible_print_book', {bookId: book.id}) }}" target="_blank" class="text-gray-500 hover:text-gray-800 bg-white/80 rounded-full p-1" title="Visualização de Impressão">
+                        <sl-icon name="printer" class="text-xl"></sl-icon>
+                    </a>
                 </div>
-            </a>
+            </div>
         {% endfor %}
     </div>
 </div>

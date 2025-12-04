@@ -22,11 +22,10 @@ class VerseRepository extends ServiceEntityRepository
     public function getVersesForTranslation(int $bookId, int $chapter, array $versionIds): array
     {
         return $this->createQueryBuilder('v')
-            ->leftJoin('v.verseTexts', 'vt')
+            ->leftJoin('v.verseTexts', 'vt', 'WITH', 'vt.version IN (:versionIds)')
             ->addSelect('vt')
             ->where('v.book = :bookId')
             ->andWhere('v.chapter = :chapter')
-            ->andWhere('vt.version IN (:versionIds) OR vt.version IS NULL')
             ->setParameter('bookId', $bookId)
             ->setParameter('chapter', $chapter)
             ->setParameter('versionIds', $versionIds)

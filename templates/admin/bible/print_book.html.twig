@@ -1,0 +1,187 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <title>{{ book.name }} - Visualização de Impressão</title>
+    <script src="https://unpkg.com/pagedjs/dist/paged.polyfill.js"></script>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Crimson+Text:ital,wght@0,400;0,600;0,700;1,400&display=swap');
+
+        :root {
+            --font-main: 'Crimson Text', 'Times New Roman', serif;
+            --font-size-main: 11pt; /* Slightly smaller for better column fit */
+            --line-height-main: 1.3;
+        }
+
+        @page {
+            size: A4;
+            margin: 15mm 15mm 20mm 15mm;
+
+            @bottom-center {
+                content: counter(page);
+                font-family: var(--font-main);
+                font-size: 10pt;
+            }
+            
+            @footnote {
+                float: bottom;
+                border-top: 1px solid black;
+                padding-top: 2mm;
+            }
+        }
+
+        body {
+            font-family: var(--font-main);
+            font-size: var(--font-size-main);
+            line-height: var(--line-height-main);
+            text-align: justify;
+            hyphens: auto; /* Enable hyphenation */
+            -webkit-hyphens: auto;
+            -ms-hyphens: auto;
+            margin: 0;
+        }
+
+        /* Title Page or Header */
+        .book-title {
+            font-size: 3rem;
+            text-align: center;
+            margin-bottom: 2rem;
+            font-weight: bold;
+            string-set: bookTitle content(text);
+            column-span: all; /* Title spans across columns */
+        }
+
+        /* Columns */
+        .content {
+            column-count: 2;
+            column-gap: 8mm;
+            column-rule: 0.5pt solid #000;
+            widows: 2;
+            orphans: 2;
+        }
+
+        .chapter {
+            break-before: always; /* Start new chapter on new column/page? Maybe just spacing */
+            margin-bottom: 1rem;
+        }
+        
+        .chapter:first-of-type {
+            break-before: avoid;
+        }
+
+        /* Chapter Drop Cap */
+        .chapter-num {
+            float: left;
+            font-size: 3.5rem;
+            line-height: 0.85;
+            font-weight: bold;
+            margin-right: 0.15em;
+            margin-top: -0.05em;
+            color: #000;
+        }
+
+        /* Verses */
+        .verse-block {
+            margin-bottom: 0;
+            display: inline; /* Try inline to flow better? No, user wants new line per verse */
+            display: block;
+            position: relative;
+        }
+
+        .verse-num {
+            font-size: 0.75em;
+            font-weight: bold;
+            vertical-align: baseline;
+            margin-right: 0.2em;
+        }
+
+        /* Subjects / Titles */
+        .subject-title {
+            font-style: italic;
+            font-size: 1.1em;
+            margin-top: 1em;
+            margin-bottom: 0.5em;
+            display: block;
+            break-after: avoid;
+            font-weight: 600;
+            text-align: center; /* Centered as requested */
+        }
+
+        /* References in Text */
+        .ref-marker {
+            font-size: 0.6em;
+            font-style: italic;
+            vertical-align: super;
+            line-height: 0;
+            margin-right: 0.05em;
+            color: #444;
+            cursor: pointer;
+        }
+
+        /* Footnotes */
+        .footnote {
+            float: footnote;
+            font-size: 9pt;
+            line-height: 1.2;
+            text-align: left;
+            text-indent: 0;
+            margin-bottom: 0.5em;
+            display: block; /* Footnote container is block */
+        }
+        
+        /* Ensure content inside is inline */
+        .footnote p, .footnote div {
+            display: inline;
+            margin: 0;
+            padding: 0;
+        }
+
+        ::footnote-call {
+            content: ''; 
+        }
+
+        ::footnote-marker {
+            content: ''; 
+        }
+    </style>
+</head>
+<body>
+
+    <div class="book-title">{{ book.name }}</div>
+
+    <div class="content">
+        {% for chapterNum, data in chapters %}
+            <div class="chapter">
+                {% for verse in data.verses %}
+                    {% if verse.title %}
+                        <div class="subject-title">{{ verse.title }}</div>
+                    {% endif %}
+
+                    <span class="verse-block">
+                        {% if loop.first %}
+                            <span class="chapter-num">{{ chapterNum }}</span>
+                        {% else %}
+                            <span class="verse-num">{{ verse.num }}</span>
+                        {% endif %}
+                        
+                        {{ verse.text|raw }}
+
+                        {# Inject footnotes for this verse #}
+                        {# We need to find references that belong to this verse #}
+                        {% for ref in data.references %}
+                            {% if ref.verseNum == verse.num %}
+                                <span class="footnote">
+                                    <sup style="font-style:italic">{{ ref.id }}</sup>
+                                    <strong>{{ chapterNum }}:{{ verse.num }}</strong>
+                                    {{ ref.text|raw }}
+                                </span>
+                            {% endif %}
+                        {% endfor %}
+                    </span>
+                {% endfor %}
+            </div>
+        {% endfor %}
+    </div>
+
+</body>
+</html>

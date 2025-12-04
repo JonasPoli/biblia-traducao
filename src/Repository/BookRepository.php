@@ -33,8 +33,8 @@ class BookRepository extends ServiceEntityRepository
             FROM book b
             JOIN verse v ON v.book_id = b.id
             LEFT JOIN verse_text vt ON vt.verse_id = v.id AND vt.version_id = :versionId
-            GROUP BY b.id, b.name, b.abbreviation, b.book_order
-            ORDER BY b.book_order ASC
+            GROUP BY b.id, b.name, b.abbreviation, b.book_order, b.testament_id
+            ORDER BY b.testament_id DESC, b.book_order ASC
         ';
 
         $resultSet = $conn->executeQuery($sql, ['versionId' => $targetVersionId]);

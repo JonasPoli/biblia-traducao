@@ -32,6 +32,13 @@
                             </div>
                         {% endif %}
 
+                        {% if item.almeida_html %}
+                            <div class="bg-yellow-50 p-2 rounded border border-yellow-200">
+                                <h3 class="text-[10px] font-semibold text-yellow-600 uppercase mb-1">Almeida (Strong)</h3>
+                                <p class="font-serif text-base leading-relaxed">{{ item.almeida_html|raw }}</p>
+                            </div>
+                        {% endif %}
+
                         {% if item.reference %}
                             <div class="bg-blue-50 p-2 rounded border border-blue-100">
                                 <h3 class="text-[10px] font-semibold text-blue-500 uppercase mb-1">Referência ({{ item.reference.version.name }})</h3>
