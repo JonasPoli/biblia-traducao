@@ -321,9 +321,10 @@
                     {% for word in parsedWords %}
                         <button 
                             data-target="word-{{ loop.index }}"
-                            class="js-tab-btn px-6 py-3 font-medium text-sm whitespace-nowrap transition-colors text-gray-500 hover:text-gray-700"
+                            class="js-tab-btn px-6 py-3 font-medium text-sm whitespace-nowrap transition-colors text-gray-500 hover:text-gray-700 text-center"
                         >
-                            {{ word.wordOriginal }}
+                            <div class="font-bold">{{ word.wordOriginal }}</div>
+                            <div class="text-xs font-normal text-gray-400">({{ word.translation }})</div>
                         </button>
                     {% endfor %}
                 </div>
@@ -439,49 +440,10 @@
                     {# Word Tabs #}
                     {% for word in parsedWords %}
                         <div id="tab-word-{{ loop.index }}" class="js-tab-content" style="display: none;">
-                            <div class="grid grid-cols-1 md:grid-cols-2 gap-8">
-                                <div>
-                                    <h3 class="text-2xl font-bold text-gray-900 mb-2">{{ word.wordOriginal }}</h3>
-                                    <p class="text-lg text-gray-600 mb-4">{{ word.transliteration }}</p>
-                                    
-                                    {% if word.strongCode %}
-                                        <div class="bg-gray-50 p-4 rounded border border-gray-200 mb-4">
-                                            <h4 class="font-bold text-gray-700 mb-2">Strong: {{ word.strongCode }}</h4>
-                                            <div class="text-gray-800 mb-2">
-                                                <strong>Definição:</strong> 
-                                                <div class="mt-1">{{ word.definition|raw }}</div>
-                                            </div>
-                                            <div class="text-gray-600 text-sm mt-2">{{ word.fullDefinition|raw }}</div>
-                                            <div class="mt-4">
-                                                <a href="https://search.nepebrasil.org/strongs/?id={{ word.strongCode }}" target="_blank" class="text-blue-600 hover:underline text-sm">
-                                                    Ver no NEPE &rarr;
-                                                </a>
-                                            </div>
-                                        </div>
-
-                                        <button 
-                                            onclick="openAddGlobalModal('{{ word.translation|escape('js') }}', '{{ word.wordOriginal|escape('js') }}', '{{ word.strongCode|escape('js') }}', '{{ word.transliteration|escape('js') }}', `{{ word.fullDefinition|escape('js') }}`)"
-                                            class="bg-purple-600 hover:bg-purple-700 text-white px-4 py-2 rounded transition-colors w-full flex items-center justify-center gap-2"
-                                        >
-                                            <sl-icon name="plus-circle"></sl-icon>
-                                            Adicionar Referência Global
-                                        </button>
-
-                                        <button 
-                                            onclick="openAddSpecificModal('{{ word.translation|escape('js') }}', '{{ word.wordOriginal|escape('js') }}', '{{ word.transliteration|escape('js') }}', `{{ word.fullDefinition|escape('js') }}`)"
-                                            class="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded transition-colors w-full flex items-center justify-center gap-2 mt-2"
-                                        >
-                                            <sl-icon name="plus-circle"></sl-icon>
-                                            Adicionar Referência Específica
-                                        </button>
-                                    {% else %}
-                                        <p class="text-gray-500 italic">Sem código Strong associado.</p>
-                                    {% endif %}
-                                </div>
-
-                                <div>
-                                    <h4 class="font-bold text-gray-900 mb-4">Ocorrências</h4>
-                                    <p class="text-gray-500 italic">Funcionalidade de ocorrências temporariamente indisponível na nova visualização.</p>
+                            <div class="word-detail-container" data-strong="{{ word.strongCode }}" data-loaded="false">
+                                <div class="flex justify-center items-center py-12">
+                                    <div class="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
+                                    <span class="ml-2 text-gray-500">Carregando detalhes...</span>
                                 </div>
                             </div>
                         </div>
@@ -491,22 +453,14 @@
         </div>
         <div style="height: 500px;"></div>
 
-        {# Debug Info #}
-        <!-- Parsed Words Count: {{ parsedWords|length }} -->
-
         <script>
         document.addEventListener('DOMContentLoaded', function() {
-            console.log('Tab script initialized');
             const buttons = document.querySelectorAll('.js-tab-btn');
             const contents = document.querySelectorAll('.js-tab-content');
-
-            console.log('Found buttons:', buttons.length);
-            console.log('Found contents:', contents.length);
 
             buttons.forEach(btn => {
                 btn.addEventListener('click', () => {
                     const targetId = 'tab-' + btn.dataset.target;
-                    console.log('Clicked tab:', targetId);
 
                     // Reset buttons
                     buttons.forEach(b => {
@@ -525,11 +479,31 @@
                     const targetContent = document.getElementById(targetId);
                     if (targetContent) {
                         targetContent.style.display = 'block';
-                    } else {
-                        console.error('Target content not found:', targetId);
+                        
+                        // Load data if it's a word tab and not loaded
+                        const container = targetContent.querySelector('.word-detail-container');
+                        if (container && container.dataset.loaded === 'false') {
+                            const strongCode = container.dataset.strong;
+                            if (strongCode) {
+                                fetch(`/api/word-detail/${strongCode}`)
+                                    .then(response => response.text())
+                                    .then(html => {
+                                        container.innerHTML = html;
+                                        container.dataset.loaded = 'true';
+                                    })
+                                    .catch(err => {
+                                        container.innerHTML = '<p class="text-red-500 text-center py-4">Erro ao carregar detalhes.</p>';
+                                        console.error(err);
+                                    });
+                            } else {
+                                container.innerHTML = '<p class="text-gray-500 text-center py-4">Sem código Strong associado.</p>';
+                                container.dataset.loaded = 'true';
+                            }
+                        }
                     }
                 });
             });
+            
             // Activate first tab
             if (buttons.length > 0) {
                 buttons[0].click();
