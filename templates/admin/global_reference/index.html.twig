@@ -1,0 +1,78 @@
+{% extends 'admin/base.html.twig' %}
+
+{% block title %}Referências Globais{% endblock %}
+
+{% block body %}
+    <div class="flex justify-between items-center mb-6">
+        <h1 class="text-2xl font-bold text-slate-800 dark:text-white">Referências Globais</h1>
+        <a href="{{ path('app_global_reference_new') }}">
+            <sl-button variant="primary">
+                <sl-icon slot="prefix" name="plus-lg"></sl-icon>
+                Nova Referência
+            </sl-button>
+        </a>
+    </div>
+
+    <div class="bg-white dark:bg-slate-800 rounded-lg shadow p-6 mb-6">
+        <form method="get" class="flex gap-4">
+            <sl-input name="search" placeholder="Buscar por termo ou texto..." value="{{ search }}" class="flex-1"></sl-input>
+            <sl-button type="submit">Buscar</sl-button>
+        </form>
+    </div>
+
+    <div class="bg-white dark:bg-slate-800 rounded-lg shadow overflow-hidden">
+        <table class="w-full text-left border-collapse">
+            <thead>
+                <tr class="bg-slate-50 dark:bg-slate-700 text-slate-600 dark:text-slate-200 text-sm uppercase">
+                    <th class="p-4 border-b border-slate-200 dark:border-slate-600">Termo</th>
+                    <th class="p-4 border-b border-slate-200 dark:border-slate-600">Texto de Referência</th>
+                    <th class="p-4 border-b border-slate-200 dark:border-slate-600">Palavra Estrangeira</th>
+                    <th class="p-4 border-b border-slate-200 dark:border-slate-600">Strong ID</th>
+                    <th class="p-4 border-b border-slate-200 dark:border-slate-600 text-right">Ações</th>
+                </tr>
+            </thead>
+            <tbody class="divide-y divide-slate-200 dark:divide-slate-600">
+                {% for reference in references %}
+                    <tr class="hover:bg-slate-50 dark:hover:bg-slate-700/50 transition-colors">
+                        <td class="p-4 font-medium text-slate-900 dark:text-white">{{ reference.term }}</td>
+                        <td class="p-4 text-slate-600 dark:text-slate-300 truncate max-w-xs">{{ reference.referenceText|raw }}</td>
+                        <td class="p-4 text-slate-600 dark:text-slate-300">{{ reference.foreignWord }}</td>
+                        <td class="p-4 text-slate-600 dark:text-slate-300">{{ reference.strongId }}</td>
+                        <td class="p-4 text-right">
+                            <div class="flex justify-end gap-2">
+                                <a href="{{ path('app_global_reference_edit', {id: reference.id}) }}">
+                                    <sl-button size="small" variant="default">
+                                        <sl-icon slot="prefix" name="pencil"></sl-icon>
+                                        Editar
+                                    </sl-button>
+                                </a>
+                                <form method="post" action="{{ path('app_global_reference_delete', {id: reference.id}) }}" onsubmit="return confirm('Tem certeza que deseja excluir esta referência?');">
+                                    <sl-button type="submit" size="small" variant="danger" outline>
+                                        <sl-icon slot="prefix" name="trash"></sl-icon>
+                                        Excluir
+                                    </sl-button>
+                                </form>
+                            </div>
+                        </td>
+                    </tr>
+                {% else %}
+                    <tr>
+                        <td colspan="5" class="p-8 text-center text-slate-500 dark:text-slate-400">
+                            Nenhuma referência encontrada.
+                        </td>
+                    </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+
+    {% if pages > 1 %}
+        <div class="mt-6 flex justify-center gap-2">
+            {% for i in 1..pages %}
+                <a href="{{ path('app_global_reference_index', {page: i, search: search}) }}">
+                    <sl-button size="small" {% if i == page %}variant="primary"{% endif %}>{{ i }}</sl-button>
+                </a>
+            {% endfor %}
+        </div>
+    {% endif %}
+{% endblock %}

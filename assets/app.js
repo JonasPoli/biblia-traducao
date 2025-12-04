@@ -1,4 +1,4 @@
-//import './bootstrap.js';
+import './bootstrap.js';
 /*
  * Welcome to your app's main JavaScript file!
  *
@@ -9,7 +9,7 @@
 
 //////////////////////
 // switch light/dark mode
-function setColorTheme(){
+function setColorTheme() {
     if (localStorage.theme === 'dark' || (!('theme' in localStorage) && window.matchMedia('(prefers-color-scheme: dark)').matches)) {
         document.documentElement.classList.add('dark')
         document.documentElement.classList.add('sl-theme-dark')
@@ -19,12 +19,12 @@ function setColorTheme(){
     }
 }
 
-window.darkMode=()=>{
+window.darkMode = () => {
     localStorage.theme = 'dark';
     setColorTheme();
 }
 
-window.lightMode=()=>{
+window.lightMode = () => {
     localStorage.theme = 'light';
     setColorTheme();
 }

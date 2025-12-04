@@ -1,0 +1,17 @@
+<div class="mb-4">
+    <sl-input name="term" label="Termo" value="{{ reference.term|default('') }}" required></sl-input>
+</div>
+
+<div class="mb-4" data-controller="tinymce">
+    <label class="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">Texto de Referência</label>
+    <textarea name="referenceText" class="w-full rounded-md border-slate-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 dark:bg-slate-700 dark:border-slate-600 dark:text-white" rows="5">{{ reference.referenceText|default('') }}</textarea>
+</div>
+
+<div class="grid grid-cols-2 gap-4 mb-4">
+    <sl-input name="foreignWord" label="Palavra Estrangeira" value="{{ reference.foreignWord|default('') }}"></sl-input>
+    <sl-input name="strongId" label="Strong ID" value="{{ reference.strongId|default('') }}"></sl-input>
+</div>
+
+<div class="flex justify-end">
+    <sl-button type="submit" variant="primary">Salvar</sl-button>
+</div>

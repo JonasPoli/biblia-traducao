@@ -47,17 +47,9 @@
                 <div class="grid grid-cols-[0px_auto] transition-all duration-300 min-h-screen" id="page-wrap">
                     <nav class="pt-10 flex flex-col h-screen sticky top-0 overflow-y-auto w-[250px] bg-white/80 dark:bg-slate-900/80 backdrop-blur-sm border-r border-slate-200 dark:border-white/10 -ml-[250px] transition-all duration-300 z-20" id="sidebar"> 
                         <div class="flex-auto">
-                            {% set isTestDb = app.current_route starts with 'app_admin_test_database_' %}
-                            <a class='py-2 px-4 mx-4 mb-2 block rounded hover:shadow hover:shadowed hover:from-white hover:to-white/60 hover:bg-gradient-to-r hover:via-30% dark:hover:from-white/5 dark:hover:via-white/10 dark:hover:to-white/5 {% if isTestDb %}shadow bg-gradient-to-r via-30% from-white/40 via-white/90 to-white/50 dark:from-white/10 dark:via-white/20 dark:to-white/10{% endif %}' href="{{ path('app_admin_test_database_index') }}">
-                                <sl-icon name="collection" class="mr-2 align-text-top"></sl-icon>
-                                Test Databases
-                            </a>
 
-                            {% set isSuperTestFields = app.current_route starts with 'app_admin_super_test_fields_' %}
-                            <a class='py-2 px-4 mx-4 mb-2 block rounded hover:shadow hover:shadowed hover:from-white hover:to-white/60 hover:bg-gradient-to-r hover:via-30% dark:hover:from-white/5 dark:hover:via-white/10 dark:hover:to-white/5 {% if isSuperTestFields %}shadow bg-gradient-to-r via-30% from-white/40 via-white/90 to-white/50 dark:from-white/10 dark:via-white/20 dark:to-white/10{% endif %}' href="{{ path('app_admin_super_test_fields_index') }}">
-                                <sl-icon name="collection" class="mr-2 align-text-top"></sl-icon>
-                                Super Test Fields
-                            </a>
+
+
 
                             <div class="border-t border-slate-200 dark:border-white/10 my-2 mx-4"></div>
 
@@ -72,6 +64,8 @@
                                 <sl-icon name="globe" class="mr-2 align-text-top"></sl-icon>
                                 Ref. Globais
                             </a>
+
+                            {{ render(controller('App\\Controller\\admin\\MenuController::sidebar')) }}
 
                             <a class='py-2 px-4 mx-4 mb-2 block rounded hover:shadow hover:from-white hover:to-white/60 hover:bg-gradient-to-r hover:via-30% dark:hover:from-white/5 dark:hover:via-white/10 dark:hover:to-white/5 align-middle' href="{{path('app_logout')}}"><sl-icon name="box-arrow-left" class="mr-2 align-text-top"></sl-icon> Logout</a>
                         </div>

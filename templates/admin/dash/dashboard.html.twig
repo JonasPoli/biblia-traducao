@@ -213,52 +213,64 @@
             </sl-card>
         </section>
 
-        <sl-card class="border-none bg-white/80 shadow-lg shadow-slate-900/5 ring-1 ring-white/70 backdrop-blur dark:bg-slate-900/70 dark:ring-white/10">
-            <div slot="header" class="flex flex-wrap items-center justify-between gap-4">
-                <div>
-                    <p class="text-lg font-semibold text-slate-900 dark:text-white">Projetos em andamento</p>
-                    <p class="text-sm text-slate-500 dark:text-slate-400">Resumo dos squads ativos</p>
-                </div>
-                <sl-button size="small" variant="primary" pill>
-                    <sl-icon slot="prefix" name="plus-lg"></sl-icon>
-                    Novo squad
-                </sl-button>
-            </div>
-            <div class="overflow-x-auto">
-                <table class="min-w-full text-left text-sm">
-                    <thead>
-                    <tr class="border-b border-slate-100 text-xs uppercase tracking-[0.3em] text-slate-500 dark:border-white/5 dark:text-slate-400">
-                        <th class="py-3 pr-4">Projeto</th>
-                        <th class="py-3 pr-4">Owner</th>
-                        <th class="py-3 pr-4">Status</th>
-                        <th class="py-3 pr-4">Ações</th>
-                    </tr>
-                    </thead>
-                    <tbody class="divide-y divide-slate-100 dark:divide-white/5">
-                    {% set projects = [
-                        { name: 'Fluxo OmniPay', owner: 'Marina Duarte', status: 'Em testes', badge: 'warning' },
-                        { name: 'Revamp onboarding', owner: 'Hugo Ramos', status: 'Produção', badge: 'success' },
-                        { name: 'AI Recommendations', owner: 'André Queiroz', status: 'Discovery', badge: 'neutral' }
-                    ] %}
-                    {% for project in projects %}
-                        <tr class="hover:bg-slate-50/70 dark:hover:bg-white/5">
-                            <td class="py-3 pr-4 font-medium text-slate-900 dark:text-white">{{ project.name }}</td>
-                            <td class="py-3 pr-4 text-slate-500 dark:text-slate-400">{{ project.owner }}</td>
-                            <td class="py-3 pr-4">
-                                <sl-badge variant="{{ project.badge }}" pill>{{ project.status }}</sl-badge>
-                            </td>
-                            <td class="py-3 pr-4">
-                                <div class="flex gap-2">
-                                    <sl-button size="small" variant="default" outline>Edit</sl-button>
-                                    <sl-button size="small" variant="primary">Ver</sl-button>
+        <section class="space-y-6">
+            <h2 class="text-xl font-semibold text-slate-900 dark:text-white">Livros e Progresso</h2>
+            <div class="grid gap-6 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
+                {% for book in books %}
+                    {% set visual = visuals[book.id] ?? null %}
+                    {% set bgColorLight = visual ? visual.color_light : '#f8fafc' %}
+                    {% set bgColorDark = visual ? visual.color_dark : '#1e293b' %}
+                    {% set svgContent = visual ? visual.svg : '' %}
+                    
+                    <a href="{{ path('app_dashboard_chapters', {id: book.id}) }}" 
+                       class="group relative overflow-hidden rounded-2xl p-6 transition-all hover:shadow-lg hover:shadow-slate-900/5 dark:hover:shadow-black/20 bg-[var(--book-color-light)] dark:bg-[var(--book-color-dark)]"
+                       style="--book-color-light: {{ bgColorLight }}; --book-color-dark: {{ bgColorDark }};">
+                        
+                        {# Dark mode overlay - removed as we now handle bg color directly #}
+                        {# <div class="absolute inset-0 transition-colors dark:bg-slate-900/90" style="background-color: transparent;"></div> #}
+                        
+                        {# SVG Background #}
+                        <div class="absolute -right-6 -bottom-6 text-slate-900/5 dark:text-white/5 transition-transform group-hover:scale-110 group-hover:-rotate-6" style="color: {{ visual ? visual.color_dark : '#000' }}; opacity: 0.15;">
+                            <svg width="128" height="128" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" class="h-32 w-32">
+                                {{ svgContent|raw }}
+                            </svg>
+                        </div>
+
+                        <div class="relative z-10">
+                            <div class="flex items-center justify-between mb-4">
+                                <span class="inline-flex items-center justify-center rounded-full px-2.5 py-0.5 text-xs font-medium bg-white/50 dark:bg-black/20 text-slate-700 dark:text-slate-200 backdrop-blur-sm">
+                                    {{ book.testament }}
+                                </span>
+                                <sl-icon name="chevron-right" class="text-slate-400 dark:text-slate-500 group-hover:text-slate-600 dark:group-hover:text-slate-300 transition-colors"></sl-icon>
+                            </div>
+                            
+                            <h3 class="text-lg font-bold text-slate-900 dark:text-white mb-1 group-hover:underline decoration-2 underline-offset-2 decoration-slate-900/10 dark:decoration-white/20">
+                                {{ book.name }}
+                            </h3>
+                            
+                            <div class="mt-4">
+                                <div class="flex justify-between text-xs mb-1">
+                                    <span class="text-slate-600 dark:text-slate-400 font-medium">Progresso</span>
+                                    <span class="text-slate-900 dark:text-white font-bold">{{ book.progress|number_format(1) }}%</span>
                                 </div>
-                            </td>
-                        </tr>
-                    {% endfor %}
-                    </tbody>
-                </table>
+                                <sl-progress-bar value="{{ book.progress }}" class="h-1.5" style="--indicator-color: {{ visual ? visual.color_dark : '#0ea5e9' }};"></sl-progress-bar>
+                            </div>
+                            
+                            <div class="mt-4 flex gap-4 text-xs text-slate-500 dark:text-slate-400">
+                                <div>
+                                    <span class="block font-bold text-slate-700 dark:text-slate-200">{{ book.total_verses }}</span>
+                                    Versículos
+                                </div>
+                                <div>
+                                    <span class="block font-bold text-slate-700 dark:text-slate-200">{{ book.translated_verses }}</span>
+                                    Traduzidos
+                                </div>
+                            </div>
+                        </div>
+                    </a>
+                {% endfor %}
             </div>
-        </sl-card>
+        </section>
     </div>
 
 {% endblock %}

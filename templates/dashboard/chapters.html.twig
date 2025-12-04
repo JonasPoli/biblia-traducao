@@ -3,41 +3,81 @@
 {% block title %}{{ book.name }} - Capítulos{% endblock %}
 
 {% block body %}
-<div class="container mx-auto px-4 py-8">
-    <div class="mb-8 flex items-center gap-4">
-        <a href="{{ path('app_dashboard') }}" class="text-blue-600 hover:text-blue-800">
-            &larr; Voltar
-        </a>
-        <h1 class="text-3xl font-bold text-gray-800">{{ book.name }}</h1>
-        <span class="text-lg font-medium text-gray-500 bg-gray-100 px-3 py-1 rounded">{{ book.abbreviation }}</span>
-    </div>
+    {% set visual = visuals[book.id] ?? null %}
+    {% set bgColorLight = visual ? visual.color_light : '#f8fafc' %}
+    {% set bgColorDark = visual ? visual.color_dark : '#1e293b' %}
+    {% set svgContent = visual ? visual.svg : '' %}
 
-    <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
-        {% for chapter in chapters %}
-            {% set percentage = chapter.total > 0 ? (chapter.translated / chapter.total * 100)|round(1) : 0 %}
+    <div class="relative overflow-hidden bg-[var(--book-color-light)] dark:bg-[var(--book-color-dark)] border-b border-slate-200 dark:border-slate-800"
+         style="--book-color-light: {{ bgColorLight }}; --book-color-dark: {{ bgColorDark }};">
+        
+        {# SVG Background #}
+        <div class="absolute -right-10 -bottom-10 text-slate-900/5 dark:text-white/5 pointer-events-none" style="color: {{ visual ? visual.color_dark : '#000' }}; opacity: 0.1;">
+            <svg width="300" height="300" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" class="h-64 w-64 rotate-12">
+                {{ svgContent|raw }}
+            </svg>
+        </div>
+
+        <div class="container mx-auto px-4 py-12 relative z-10">
+            <div class="mb-4">
+                <a href="{{ path('app_dashboard') }}" class="inline-flex items-center gap-2 text-sm font-medium text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white transition-colors">
+                    <sl-icon name="arrow-left"></sl-icon> Voltar para o Painel
+                </a>
+            </div>
             
-            <a href="{{ path('app_translation_chapter', {bookId: book.id, chapter: chapter.chapter}) }}" class="block bg-white rounded-lg shadow-md hover:shadow-lg transition-shadow duration-300 overflow-hidden border border-gray-100">
-                <div class="p-6">
-                    <div class="flex justify-between items-center mb-4">
-                        <h2 class="text-xl font-semibold text-gray-900">Capítulo {{ chapter.chapter }}</h2>
-                    </div>
-
-                    <div class="mb-2 flex justify-between text-sm text-gray-600">
-                        <span>Progresso</span>
-                        <span class="font-medium">{{ percentage }}%</span>
-                    </div>
-
-                    <div class="w-full bg-gray-200 rounded-full h-2.5 mb-4">
-                        <div class="bg-blue-600 h-2.5 rounded-full" style="width: {{ percentage }}%"></div>
-                    </div>
-
-                    <div class="text-xs text-gray-500 flex justify-between">
-                        <span>{{ chapter.translated }} traduzidos</span>
-                        <span>Total: {{ chapter.total }}</span>
+            <div class="flex items-center gap-4">
+                <div class="p-3 rounded-xl bg-white/50 dark:bg-white/10 backdrop-blur shadow-sm ring-1 ring-slate-900/5 dark:ring-white/10">
+                    <svg width="48" height="48" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" class="h-12 w-12" style="color: {{ visual ? visual.color_dark : 'currentColor' }}">
+                        {{ svgContent|raw }}
+                    </svg>
+                </div>
+                <div>
+                    <h1 class="text-4xl font-bold text-slate-900 dark:text-white tracking-tight">{{ book.name }}</h1>
+                    <div class="flex items-center gap-3 mt-2">
+                        <span class="inline-flex items-center justify-center rounded-full px-2.5 py-0.5 text-xs font-medium bg-slate-900/10 dark:bg-white/10 text-slate-700 dark:text-slate-200">
+                            {{ book.abbreviation }}
+                        </span>
+                        <span class="text-sm text-slate-600 dark:text-slate-400">{{ book.testament.name }}</span>
                     </div>
                 </div>
-            </a>
-        {% endfor %}
+            </div>
+        </div>
     </div>
-</div>
+
+    <div class="container mx-auto px-4 py-8">
+        <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
+            {% for chapter in chapters %}
+                {% set percentage = chapter.total > 0 ? (chapter.translated / chapter.total * 100)|round(1) : 0 %}
+                
+                <a href="{{ path('app_translation_chapter', {bookId: book.id, chapter: chapter.chapter}) }}" class="group block bg-white dark:bg-slate-800 rounded-xl shadow-sm hover:shadow-md transition-all duration-300 border border-slate-200 dark:border-slate-700 overflow-hidden">
+                    <div class="p-6">
+                        <div class="flex justify-between items-center mb-4">
+                            <h2 class="text-lg font-semibold text-slate-900 dark:text-white group-hover:text-primary-600 transition-colors">Capítulo {{ chapter.chapter }}</h2>
+                            {% if percentage >= 100 %}
+                                <sl-icon name="check-circle-fill" class="text-emerald-500 text-xl"></sl-icon>
+                            {% endif %}
+                        </div>
+
+                        <div class="mb-2 flex justify-between text-xs text-slate-500 dark:text-slate-400 uppercase tracking-wider font-medium">
+                            <span>Progresso</span>
+                            <span>{{ percentage }}%</span>
+                        </div>
+
+                        <div class="w-full bg-slate-100 dark:bg-slate-700 rounded-full h-2 mb-4 overflow-hidden">
+                            <div class="h-full rounded-full transition-all duration-500" 
+                                 style="width: {{ percentage }}%; background-color: {{ visual ? visual.color_dark : '#3b82f6' }}"></div>
+                        </div>
+
+                        <div class="flex justify-between items-center text-xs text-slate-500 dark:text-slate-400 border-t border-slate-100 dark:border-slate-700 pt-4 mt-2">
+                            <div class="flex items-center gap-1">
+                                <sl-icon name="translate" class="text-slate-400"></sl-icon>
+                                <span>{{ chapter.translated }} traduzidos</span>
+                            </div>
+                            <span>Total: {{ chapter.total }}</span>
+                        </div>
+                    </div>
+                </a>
+            {% endfor %}
+        </div>
+    </div>
 {% endblock %}

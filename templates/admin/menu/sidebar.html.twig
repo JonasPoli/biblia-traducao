@@ -1,0 +1,21 @@
+<div class="border-t border-slate-200 dark:border-white/10 my-2 mx-4"></div>
+<div class="px-4 mb-2 text-xs font-bold text-slate-500 uppercase tracking-wider">Antigo Testamento</div>
+{% for book in books %}
+    {% if book.testament == 'VT' %}
+        {% set isActive = app.request.get('bookId') == book.id %}
+        <a class='py-1 px-4 mx-4 mb-1 block rounded hover:shadow hover:shadowed hover:from-white hover:to-white/60 hover:bg-gradient-to-r hover:via-30% dark:hover:from-white/5 dark:hover:via-white/10 dark:hover:to-white/5 text-sm {% if isActive %}shadow bg-gradient-to-r via-30% from-white/40 via-white/90 to-white/50 dark:from-white/10 dark:via-white/20 dark:to-white/10 font-semibold{% endif %}' href="{{ path('app_translation_chapter', {bookId: book.id, chapter: 1}) }}">
+            {{ book.name }}
+        </a>
+    {% endif %}
+{% endfor %}
+
+<div class="border-t border-slate-200 dark:border-white/10 my-2 mx-4"></div>
+<div class="px-4 mb-2 text-xs font-bold text-slate-500 uppercase tracking-wider">Novo Testamento</div>
+{% for book in books %}
+    {% if book.testament == 'NT' %}
+        {% set isActive = app.request.get('bookId') == book.id %}
+        <a class='py-1 px-4 mx-4 mb-1 block rounded hover:shadow hover:shadowed hover:from-white hover:to-white/60 hover:bg-gradient-to-r hover:via-30% dark:hover:from-white/5 dark:hover:via-white/10 dark:hover:to-white/5 text-sm {% if isActive %}shadow bg-gradient-to-r via-30% from-white/40 via-white/90 to-white/50 dark:from-white/10 dark:via-white/20 dark:to-white/10 font-semibold{% endif %}' href="{{ path('app_translation_chapter', {bookId: book.id, chapter: 1}) }}">
+            {{ book.name }}
+        </a>
+    {% endif %}
+{% endfor %}
