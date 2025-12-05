@@ -59,6 +59,11 @@ class DatabaseExportCommand extends Command
         $io->text(sprintf('Host: <info>%s</info>', $host));
         $io->text(sprintf('Driver: <info>%s</info>', $driver));
 
+        // List tables to be exported for verification
+        $io->text('Checking tables...');
+        $tables = $this->connection->createSchemaManager()->listTableNames();
+        $io->listing($tables);
+
         $cmd = '';
         $env = [];
 
@@ -73,8 +78,10 @@ class DatabaseExportCommand extends Command
             // --single-transaction: Consistent snapshot (InnoDB)
             // --add-drop-table: Add DROP TABLE before CREATE TABLE
             // --complete-insert: Use complete INSERT statements that include column names
+            // --column-statistics=0: Disable column statistics (fix for MySQL 8 permission issues)
+            // --no-tablespaces: Disable tablespace dumping (fix for PROCESS privilege issues)
             $cmd = sprintf(
-                'mysqldump -h %s -P %s -u %s --routines --triggers --events --hex-blob --single-transaction --add-drop-table --complete-insert %s > "%s"',
+                'mysqldump -h %s -P %s -u %s --routines --triggers --events --hex-blob --single-transaction --add-drop-table --complete-insert --column-statistics=0 --no-tablespaces %s > "%s"',
                 escapeshellarg($host),
                 escapeshellarg($port),
                 escapeshellarg($user),
