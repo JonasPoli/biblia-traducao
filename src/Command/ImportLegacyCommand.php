@@ -498,9 +498,41 @@ class ImportLegacyCommand extends Command
     private function importVerseWords(SymfonyStyle $io): void
     {
         $io->section('Importing Verse Words (Interlinear)...');
+
+        // Pre-load maps for performance
+        $io->text('Loading maps...');
+        
+        // 1. Strong Definitions Map: Code (H1234) -> ID
+        $strongMap = [];
+        $strongRows = $this->entityManager->getConnection()->fetchAllAssociative('SELECT id, code FROM strong_definition');
+        foreach ($strongRows as $row) {
+            $strongMap[$row['code']] = $row['id'];
+        }
+        
+        // 2. Book -> Testament Map
+        $bookTestamentMap = [];
+        $bookRows = $this->entityManager->getConnection()->fetchAllAssociative('SELECT id, testament_id FROM book');
+        foreach ($bookRows as $row) {
+            $bookTestamentMap[$row['id']] = $row['testament_id'];
+        }
+
+        // 3. Verse -> Book Map
+        // This might be large (~31k), but manageable in memory
+        $verseBookMap = [];
+        $verseRows = $this->entityManager->getConnection()->fetchAllAssociative('SELECT id, book_id FROM verse');
+        foreach ($verseRows as $row) {
+            $verseBookMap[$row['id']] = $row['book_id'];
+        }
+
+        $io->text('Maps loaded. Starting import...');
+
         $offset = 0;
         $limit = 2000; // Larger batch for raw SQL
         $connection = $this->entityManager->getConnection();
+        $platform = $connection->getDatabasePlatform();
+        $isPostgres = $platform instanceof \Doctrine\DBAL\Platforms\PostgreSQLPlatform;
+
+        $missingStrongs = [];
 
         while (true) {
             $rows = $this->legacyConnection->fetchAllAssociative("SELECT * FROM interlinear LIMIT $limit OFFSET $offset");
@@ -509,21 +541,39 @@ class ImportLegacyCommand extends Command
 
             $values = [];
             $params = [];
-            $types = [];
             
             foreach ($rows as $row) {
-                // Skip if verse_id is missing (integrity check)
-                // We assume verse exists because we imported them. 
-                // But for raw SQL, if FK fails, it will throw exception.
-                // Let's just insert.
+                $verseId = $row['external_id_id'];
                 
-                $values[] = "(?, ?, ?, ?, ?, ?, ?, ?, ?)";
+                // Resolve Strong ID
+                $strongDefId = null;
+                $strongCodeString = null;
+
+                if (!empty($row['strong_id'])) {
+                    // Determine Testament to choose prefix H or G
+                    $bookId = $verseBookMap[$verseId] ?? null;
+                    $testamentId = $bookId ? ($bookTestamentMap[$bookId] ?? null) : null;
+                    
+                    if ($testamentId) {
+                        $prefix = ($testamentId == 1) ? 'H' : 'G'; // 1 = Antigo (H), 2 = Novo (G)
+                        $strongCodeString = $prefix . $row['strong_id'];
+                        $strongDefId = $strongMap[$strongCodeString] ?? null;
+
+                        if (!$strongDefId) {
+                            $missingStrongs[$strongCodeString] = true; // Use key for deduplication
+                        }
+                    }
+                }
+
+                $values[] = "(?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)";
                 
                 $params[] = $row['id'];
-                $params[] = $row['external_id_id']; // verse_id
-                $params[] = $row['strong_id'] ?: null; // strong_code_id
+                $params[] = $verseId; // verse_id
+                $params[] = $strongDefId; // strong_definition_id (renamed relation)
+                $params[] = $strongCodeString; // strong_code (new string field)
                 $params[] = $row['greek_word'] ?: $row['hebrew_word']; // word_original
                 $params[] = $row['portuguese_word'];
+                $params[] = $row['english_word'] ?? null; // word_english
                 $params[] = $row['transliteral'];
                 $params[] = $row['english_type'];
                 $params[] = $row['portuguese_type'];
@@ -531,8 +581,11 @@ class ImportLegacyCommand extends Command
             }
 
             if (!empty($values)) {
-                // Use INSERT IGNORE for MySQL compatibility instead of ON CONFLICT
-                $sql = "INSERT IGNORE INTO verse_word (id, verse_id, strong_code_id, word_original, word_portuguese, transliteration, english_type, portuguese_type, position) VALUES " . implode(', ', $values);
+                if ($isPostgres) {
+                    $sql = "INSERT INTO verse_word (id, verse_id, strong_definition_id, strong_code, word_original, word_portuguese, word_english, transliteration, english_type, portuguese_type, position) VALUES " . implode(', ', $values) . " ON CONFLICT (id) DO NOTHING";
+                } else {
+                    $sql = "INSERT IGNORE INTO verse_word (id, verse_id, strong_definition_id, strong_code, word_original, word_portuguese, word_english, transliteration, english_type, portuguese_type, position) VALUES " . implode(', ', $values);
+                }
                 
                 try {
                     $connection->executeStatement($sql, $params);
@@ -550,6 +603,11 @@ class ImportLegacyCommand extends Command
         }
         $io->newLine();
         $io->text('Verse words imported (raw SQL).');
+
+        if (!empty($missingStrongs)) {
+            $io->warning('The following Strong codes were not found in the database:');
+            $io->listing(array_keys($missingStrongs));
+        }
     }
 
     private function importReferences(SymfonyStyle $io): void

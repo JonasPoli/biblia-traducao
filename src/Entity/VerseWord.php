@@ -19,13 +19,19 @@ class VerseWord
 
     #[ORM\ManyToOne]
     #[ORM\JoinColumn(nullable: true)]
-    private ?StrongDefinition $strongCode = null;
+    private ?StrongDefinition $strongDefinition = null;
+
+    #[ORM\Column(length: 20, nullable: true)]
+    private ?string $strongCode = null;
 
     #[ORM\Column(length: 255, nullable: true)]
     private ?string $wordOriginal = null;
 
     #[ORM\Column(length: 255, nullable: true)]
     private ?string $wordPortuguese = null;
+
+    #[ORM\Column(length: 255, nullable: true)]
+    private ?string $wordEnglish = null;
 
     #[ORM\Column(length: 255, nullable: true)]
     private ?string $transliteration = null;
@@ -56,12 +62,24 @@ class VerseWord
         return $this;
     }
 
-    public function getStrongCode(): ?StrongDefinition
+    public function getStrongDefinition(): ?StrongDefinition
+    {
+        return $this->strongDefinition;
+    }
+
+    public function setStrongDefinition(?StrongDefinition $strongDefinition): static
+    {
+        $this->strongDefinition = $strongDefinition;
+
+        return $this;
+    }
+
+    public function getStrongCode(): ?string
     {
         return $this->strongCode;
     }
 
-    public function setStrongCode(?StrongDefinition $strongCode): static
+    public function setStrongCode(?string $strongCode): static
     {
         $this->strongCode = $strongCode;
 
@@ -88,6 +106,18 @@ class VerseWord
     public function setWordPortuguese(?string $wordPortuguese): static
     {
         $this->wordPortuguese = $wordPortuguese;
+
+        return $this;
+    }
+
+    public function getWordEnglish(): ?string
+    {
+        return $this->wordEnglish;
+    }
+
+    public function setWordEnglish(?string $wordEnglish): static
+    {
+        $this->wordEnglish = $wordEnglish;
 
         return $this;
     }

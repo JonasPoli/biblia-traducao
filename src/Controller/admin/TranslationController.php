@@ -234,8 +234,8 @@ final class TranslationController extends AbstractController
         // Fetch Occurrences for each word
         $occurrences = [];
         foreach ($words as $word) {
-            if ($word->getStrongCode()) {
-                $occurrences[$word->getId()] = $verseWordRepository->findOccurrences($word->getStrongCode(), 20);
+            if ($word->getStrongDefinition()) {
+                $occurrences[$word->getId()] = $verseWordRepository->findOccurrences($word->getStrongDefinition(), 20);
             }
         }
 
@@ -290,6 +290,25 @@ final class TranslationController extends AbstractController
                 $item['original_html'] = trim($originalHtml);
                 $item['reference_html'] = trim($referenceHtml);
             }
+
+            // Generate English HTML from VerseWords
+            $englishHtml = '';
+            foreach ($cv->getVerseWords() as $word) {
+                $strongCode = $word->getStrongCode();
+                $englishWord = $word->getWordEnglish();
+                
+                if ($englishWord) {
+                    // Replace spaces with non-breaking spaces to keep phrases together
+                    $englishWord = str_replace(' ', '&nbsp;', $englishWord);
+
+                    if ($strongCode) {
+                        $englishHtml .= "<span class=\"strong-word cursor-pointer hover:bg-yellow-200 transition-colors rounded px-0.5\" data-strong=\"{$strongCode}\">{$englishWord}</span> ";
+                    } else {
+                        $englishHtml .= "{$englishWord} ";
+                    }
+                }
+            }
+            $item['english_html'] = trim($englishHtml);
 
             $chapterData[] = $item;
         }
@@ -400,6 +419,39 @@ final class TranslationController extends AbstractController
             }
         }
 
+        // Generate Original HTML from VerseWords
+        $originalHtml = '';
+        foreach ($words as $word) {
+            $strongCode = $word->getStrongCode();
+            $originalWord = $word->getWordOriginal();
+            
+            if ($strongCode) {
+                $originalHtml .= "<span class=\"strong-word cursor-pointer hover:bg-yellow-200 transition-colors rounded px-0.5\" data-strong=\"{$strongCode}\">{$originalWord}</span> ";
+            } else {
+                $originalHtml .= "{$originalWord} ";
+            }
+        }
+        $originalHtml = trim($originalHtml);
+
+        // Generate English HTML from VerseWords
+        $englishHtml = '';
+        foreach ($words as $word) {
+            $strongCode = $word->getStrongCode();
+            $englishWord = $word->getWordEnglish();
+            
+            if ($englishWord) {
+                // Replace spaces with non-breaking spaces to keep phrases together
+                $englishWord = str_replace(' ', '&nbsp;', $englishWord);
+                
+                if ($strongCode) {
+                    $englishHtml .= "<span class=\"strong-word cursor-pointer hover:bg-yellow-200 transition-colors rounded px-0.5\" data-strong=\"{$strongCode}\">{$englishWord}</span> ";
+                } else {
+                    $englishHtml .= "{$englishWord} ";
+                }
+            }
+        }
+        $englishHtml = trim($englishHtml);
+
         return $this->render('translation/verse.html.twig', [
             'book' => $book,
             'chapter' => $chapter,
@@ -408,6 +460,8 @@ final class TranslationController extends AbstractController
             'words' => $words, // Keeping for backward compat or reference if needed, but tabs will use parsedWords
             'parsedWords' => $parsedWords,
             'almeidaHtml' => $almeidaHtml,
+            'originalHtml' => $originalHtml,
+            'englishHtml' => $englishHtml,
             'chapterData' => $chapterData,
             'originalVersionId' => $originalVersionId,
             'references' => $references,

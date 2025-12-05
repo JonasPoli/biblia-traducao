@@ -11,7 +11,8 @@ export default class extends Controller {
             selector.id = 'tinymce_' + Math.random().toString(36).substr(2, 9);
         }
 
-        const apiKey = 'fgoswlkgkpmdzt0fcrpns1iaszu7uspeqxnd841096wuq5wp';
+        const apiKeyMeta = document.querySelector('meta[name="tinymce-api-key"]');
+        const apiKey = apiKeyMeta ? apiKeyMeta.content : 'no-api-key';
         const scriptSrc = `https://cdn.tiny.cloud/1/${apiKey}/tinymce/7/tinymce.min.js`;
 
         if (!document.querySelector(`script[src="${scriptSrc}"]`)) {

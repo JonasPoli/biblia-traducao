@@ -6,6 +6,7 @@
 parameters:
     emailFrom: '%env(resolve:EMAIL_FROM)%'
     emailContactTo: '%env(resolve:EMAIL_CONTACT_TO)%'
+    tinymceApiKey: '%env(resolve:TINYMCE_API_KEY)%'
 
 services:
     # default configuration for services in *this* file

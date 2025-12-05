@@ -23,7 +23,8 @@
         </script>
         {% block javascripts %}
             {% block importmap %}{{ importmap('app') }}{% endblock %}
-            <script src="https://cdn.tiny.cloud/1/fgoswlkgkpmdzt0fcrpns1iaszu7uspeqxnd841096wuq5wp/tinymce/6/tinymce.min.js" referrerpolicy="origin"></script>
+            <script src="https://cdn.tiny.cloud/1/{{ tinymceApiKey }}/tinymce/6/tinymce.min.js" referrerpolicy="origin"></script>
+            <meta name="tinymce-api-key" content="{{ tinymceApiKey }}">
             <script>
                 document.addEventListener('DOMContentLoaded', function() {
                     tinymce.init({

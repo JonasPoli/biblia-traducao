@@ -2,6 +2,7 @@ twig:
     file_name_pattern: '*.twig'
     globals:
         templateService: '@App\Service\TemplateService'
+        tinymceApiKey: '%tinymceApiKey%'
 
 when@test:
     twig:

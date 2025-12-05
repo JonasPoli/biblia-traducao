@@ -23,7 +23,7 @@ class VerseWordRepository extends ServiceEntityRepository
         return $this->createQueryBuilder('vw')
             ->join('vw.verse', 'v')
             ->join('v.book', 'b')
-            ->where('vw.strongCode = :strongCode')
+            ->where('vw.strongDefinition = :strongCode')
             ->setParameter('strongCode', $strongCode)
             ->orderBy('b.bookOrder', 'ASC')
             ->addOrderBy('v.chapter', 'ASC')

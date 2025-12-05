@@ -31,9 +31,17 @@ class Verse
     #[ORM\OneToMany(targetEntity: VerseText::class, mappedBy: 'verse')]
     private Collection $verseTexts;
 
+    /**
+     * @var Collection<int, VerseWord>
+     */
+    #[ORM\OneToMany(targetEntity: VerseWord::class, mappedBy: 'verse')]
+    #[ORM\OrderBy(['position' => 'ASC'])]
+    private Collection $verseWords;
+
     public function __construct()
     {
         $this->verseTexts = new ArrayCollection();
+        $this->verseWords = new ArrayCollection();
     }
 
     public function getId(): ?int
@@ -83,5 +91,13 @@ class Verse
     public function getVerseTexts(): Collection
     {
         return $this->verseTexts;
+    }
+
+    /**
+     * @return Collection<int, VerseWord>
+     */
+    public function getVerseWords(): Collection
+    {
+        return $this->verseWords;
     }
 }
