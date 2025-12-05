@@ -80,6 +80,9 @@
                     <a href="{{ path('app_bible_download_latex', {bookId: book.id}) }}" class="text-slate-500 hover:text-slate-900 dark:text-slate-400 dark:hover:text-white bg-white/90 dark:bg-slate-800/90 backdrop-blur rounded-full p-2 shadow-sm hover:shadow-md transition-all" title="Baixar LaTeX">
                         <sl-icon name="file-earmark-code" class="text-lg"></sl-icon>
                     </a>
+                    <a href="{{ path('app_bible_download_epub', {bookId: book.id}) }}" class="text-slate-500 hover:text-slate-900 dark:text-slate-400 dark:hover:text-white bg-white/90 dark:bg-slate-800/90 backdrop-blur rounded-full p-2 shadow-sm hover:shadow-md transition-all" title="Baixar EPUB">
+                        <sl-icon name="book" class="text-lg"></sl-icon>
+                    </a>
                     <a href="{{ path('app_bible_print_book', {bookId: book.id}) }}" target="_blank" class="text-slate-500 hover:text-slate-900 dark:text-slate-400 dark:hover:text-white bg-white/90 dark:bg-slate-800/90 backdrop-blur rounded-full p-2 shadow-sm hover:shadow-md transition-all" title="Visualização de Impressão">
                         <sl-icon name="printer" class="text-lg"></sl-icon>
                     </a>
