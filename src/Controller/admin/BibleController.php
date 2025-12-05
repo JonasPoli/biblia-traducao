@@ -252,6 +252,7 @@ final class BibleController extends AbstractController
 
 \usepackage[brazil]{babel}
 \usepackage{microtype}
+\usepackage{lettrine}
 
 % Configure footnote spacing and limits
 \interfootnotelinepenalty=10000
@@ -283,16 +284,14 @@ final class BibleController extends AbstractController
 }
 
 \newcommand{\Chapter}{%
-  \par\bigskip
   \stepcounter{chapter}%
   \setcounter{verse}{0}%
   \setcounter{footnote}{0}% Reset footnote counter per chapter
-  {\Huge\bfseries \thechapter}\hspace{0.5em}%
 }
 
 \newcommand{\Assunto}[1]{%
   \par\medskip
-  {\itshape\small #1}\par
+  {\centering\itshape\small #1\par}
   \medskip
 }
 
@@ -306,20 +305,25 @@ final class BibleController extends AbstractController
   \par
   \stepcounter{verse}%
   \noindent
-  \printversenum
-  #1%
+  \ifnum\value{verse}=1
+    \lettrine[lines=2, findent=3pt, nindent=0pt]{\thechapter}{}%
+    #1%
+  \else
+    \printversenum
+    #1%
+  \fi
 }
 
 % Customize footnote marker (Reference number in text)
 % Sobrescrito, fonte ligeiramente menor, sem negrito e com italico
 \makeatletter
 \renewcommand{\@makefnmark}{\hbox{\textsuperscript{\textit{\@thefnmark}}}}
-\makeatother
 
-% Use native LaTeX footnote
+% Use native LaTeX footnote with 60% font size relative to current (body) size
 \newcommand{\xref}[1]{%
-  \footnote{#1}%
+  \footnote{\fontsize{0.7\dimexpr\f@size pt\relax}{0.84\dimexpr\f@size pt\relax}\selectfont #1}%
 }
+\makeatother
 
 \begin{document}
 

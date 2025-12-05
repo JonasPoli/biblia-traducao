@@ -30,7 +30,8 @@ class DatabaseImportCommand extends Command
     {
         $this
             ->addArgument('file', InputArgument::OPTIONAL, 'Path to SQL file relative to sql/ directory', 'latest.sql')
-            ->addArgument('database', InputArgument::OPTIONAL, 'Target database name (defaults to connection config)', null);
+            ->addArgument('database', InputArgument::OPTIONAL, 'Target database name (defaults to connection config)', null)
+            ->addOption('force', 'f', null, 'Skip confirmation and force import');
     }
 
     protected function execute(InputInterface $input, OutputInterface $output): int
@@ -49,47 +50,68 @@ class DatabaseImportCommand extends Command
 
         $sqlDir = $this->params->get('kernel.project_dir') . '/sql';
         $fileArg = $input->getArgument('file');
-        $sqlFile = $sqlDir . '/' . $fileArg;
+        
+        if ($fileArg === 'latest.sql') {
+             // Find the most recent file in the directory
+             $files = glob($sqlDir . '/*.sql');
+             if ($files) {
+                 usort($files, function($a, $b) {
+                     return filemtime($b) - filemtime($a);
+                 });
+                 $sqlFile = $files[0];
+                 $io->info('Using latest export: ' . basename($sqlFile));
+             } else {
+                 $sqlFile = $sqlDir . '/latest.sql'; // Fallback
+             }
+        } else {
+            $sqlFile = $sqlDir . '/' . $fileArg;
+        }
 
         if (!file_exists($sqlFile)) {
             $io->error("SQL file not found at $sqlFile");
             return Command::FAILURE;
         }
 
-        // Ensure the target database exists; create it if it does not.
-        if (str_contains($driver, 'mysql')) {
-            $createDbCmd = sprintf(
-                "mysql -u%s -p%s -h%s -P%d -e 'CREATE DATABASE IF NOT EXISTS `%s`'",
-                escapeshellarg($user),
-                escapeshellarg($password),
-                escapeshellarg($host),
-                $port,
-                $database
-            );
-            $processCreate = Process::fromShellCommandline($createDbCmd);
-            $processCreate->run();
-            if (!$processCreate->isSuccessful()) {
-                $io->error('Failed to create MySQL database: ' . $processCreate->getErrorOutput());
-                return Command::FAILURE;
-            }
-        } elseif (str_contains($driver, 'pgsql')) {
-            $createDbCmd = sprintf(
-                'PGPASSWORD=%s createdb -U %s -h %s -p %d %s',
-                escapeshellarg($password),
-                escapeshellarg($user),
-                escapeshellarg($host),
-                $port,
-                escapeshellarg($database)
-            );
-            $processCreate = Process::fromShellCommandline($createDbCmd);
-            $processCreate->run();
-            if (!$processCreate->isSuccessful()) {
-                $io->error('Failed to create PostgreSQL database: ' . $processCreate->getErrorOutput());
-                return Command::FAILURE;
+        if (!$input->getOption('force')) {
+            $io->warning(sprintf('This will DROP the database "%s" and recreate it from "%s".', $database, basename($sqlFile)));
+            if (!$io->confirm('Are you sure you want to continue?', false)) {
+                $io->text('Import cancelled.');
+                return Command::SUCCESS;
             }
         }
 
+        // Recreate the database
+        $io->section('Recreating Database');
+        
+        if (str_contains($driver, 'mysql')) {
+            // Drop and Create for MySQL
+            $commands = [
+                sprintf("mysql -u%s -p%s -h%s -P%d -e 'DROP DATABASE IF EXISTS `%s`'", escapeshellarg($user), escapeshellarg($password), escapeshellarg($host), $port, $database),
+                sprintf("mysql -u%s -p%s -h%s -P%d -e 'CREATE DATABASE `%s`'", escapeshellarg($user), escapeshellarg($password), escapeshellarg($host), $port, $database),
+            ];
+        } elseif (str_contains($driver, 'pgsql')) {
+            // Drop and Create for PostgreSQL
+            $commands = [
+                sprintf('PGPASSWORD=%s dropdb -U %s -h %s -p %d --if-exists %s', escapeshellarg($password), escapeshellarg($user), escapeshellarg($host), $port, escapeshellarg($database)),
+                sprintf('PGPASSWORD=%s createdb -U %s -h %s -p %d %s', escapeshellarg($password), escapeshellarg($user), escapeshellarg($host), $port, escapeshellarg($database)),
+            ];
+        } else {
+            $io->error("Driver '$driver' is not supported for automatic import.");
+            return Command::FAILURE;
+        }
+
+        foreach ($commands as $cmd) {
+            $process = Process::fromShellCommandline($cmd);
+            $process->run();
+            if (!$process->isSuccessful()) {
+                $io->error('Database recreation failed: ' . $process->getErrorOutput());
+                return Command::FAILURE;
+            }
+        }
+        $io->success('Database recreated.');
+
         // Build the import command based on driver
+        $io->section('Importing Data');
         if (str_contains($driver, 'mysql')) {
             // MySQL import, include database name with -D flag
             $cmd = sprintf(
@@ -112,14 +134,11 @@ class DatabaseImportCommand extends Command
                 escapeshellarg($database),
                 escapeshellarg($sqlFile)
             );
-        } else {
-            $io->error("Driver '$driver' is not supported for automatic import.");
-            return Command::FAILURE;
         }
 
         $io->text('Running import command...');
         $process = Process::fromShellCommandline($cmd);
-        $process->setTimeout(300);
+        $process->setTimeout(600); // Increased timeout
         $process->run();
 
         if (!$process->isSuccessful()) {
@@ -128,7 +147,7 @@ class DatabaseImportCommand extends Command
             return Command::FAILURE;
         }
 
-        $io->success('Database imported successfully from: ' . $sqlFile);
+        $io->success('Database imported successfully from: ' . basename($sqlFile));
         return Command::SUCCESS;
     }
 }

@@ -488,7 +488,7 @@ Aqui está o código LaTeX final que resolveu os problemas de duplicação e lay
 % Simplificado: Usa apenas o footnote nativo
 % O LaTeX gerencia o número no texto e no rodapé automaticamente
 \newcommand{\xref}[1]{%
-  \footnote{#1}%
+  \footnote{\small #1}%
 }
 
 \begin{document}
