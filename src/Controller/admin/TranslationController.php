@@ -8,6 +8,8 @@ use App\Repository\BibleVersionRepository;
 use App\Repository\BookRepository;
 use App\Repository\VerseRepository;
 use App\Repository\VerseTextRepository;
+use App\Repository\GlobalReferenceRepository;
+use App\Repository\VerseReferenceRepository;
 use App\Repository\StrongDefinitionRepository;
 use Doctrine\ORM\EntityManagerInterface;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
@@ -27,7 +29,10 @@ final class TranslationController extends AbstractController
         int $bookId,
         int $chapter,
         BookRepository $bookRepository,
-        VerseRepository $verseRepository
+        VerseRepository $verseRepository,
+        VerseTextRepository $verseTextRepository,
+        GlobalReferenceRepository $globalReferenceRepository,
+        VerseReferenceRepository $verseReferenceRepository
     ): Response {
         $book = $bookRepository->find($bookId);
         if (!$book) {
@@ -47,37 +52,107 @@ final class TranslationController extends AbstractController
             22 // Almeida + Strongs
         ];
 
-        $verses = $verseRepository->getVersesForTranslation($bookId, $chapter, $versionIds);
+        $verses = $verseRepository->findBy(['book' => $book, 'chapter' => $chapter], ['verse' => 'ASC']);
+        
+        // Fetch References
+        $globalReferences = $globalReferenceRepository->findAll();
+        $specificReferences = $verseReferenceRepository->findByBook($bookId);
 
         $data = [];
+        $footnotes = [];
+        $refCounter = 1;
+
         foreach ($verses as $verse) {
-            $item = [
-                'verse' => $verse,
-                'original' => null,
-                'reference' => null,
-                'target' => null,
-                'almeida_html' => null,
-            ];
+            $item = [];
+            $item['verse'] = $verse;
+            
+            // Fetch texts
+            $textOriginal = $verseTextRepository->findOneBy(['verse' => $verse, 'version' => 5]); // Greek/Hebrew
+            $text22 = $verseTextRepository->findOneBy(['verse' => $verse, 'version' => 22]); // Almeida
+            $textTarget = $verseTextRepository->findOneBy(['verse' => $verse, 'version' => 17]); // Target (Haroldo)
+            $textReference = $verseTextRepository->findOneBy(['verse' => $verse, 'version' => 18]); // Reference (KJA)
 
-            $text22 = null;
+            $item['original'] = $textOriginal;
+            $item['reference'] = $textReference;
+            $item['target'] = $textTarget;
 
-            foreach ($verse->getVerseTexts() as $vt) {
-                $vid = $vt->getVersion()->getId();
-                if ($vid === $originalVersionId) {
-                    $item['original'] = $vt;
-                } elseif ($vid === self::REFERENCE_VERSION_ID) {
-                    $item['reference'] = $vt;
-                } elseif ($vid === self::TARGET_VERSION_ID) {
-                    $item['target'] = $vt;
-                } elseif ($vid === 22) {
-                    $text22 = $vt->getText();
+            // Process Target Text for References
+            $processedText = $textTarget ? $textTarget->getText() : '';
+            $processedText = strip_tags($processedText, '<strong><em><b><i><u><span>'); // Keep basic formatting
+            
+            // Logic to inject references (similar to BibleController)
+            $verseRefs = [];
+            $seenTermsExact = [];
+            
+            // 1. Specific References
+            foreach ($specificReferences as $sr) {
+                if ($sr->getVerse()->getId() !== $verse->getId()) continue;
+                $term = trim($sr->getTerm() ?: '');
+                if (!$term) continue;
+                $termNormalized = preg_replace('/\s+/', ' ', strtolower($term));
+                if (isset($seenTermsExact[$termNormalized])) continue;
+                
+                $verseRefs[] = ['term' => $term, 'text' => $sr->getReferenceText(), 'obj' => $sr];
+                $seenTermsExact[$termNormalized] = true;
+            }
+
+            // 2. Global References
+            foreach ($globalReferences as $gr) {
+                $term = trim($gr->getTerm() ?: '');
+                if (!$term) continue;
+                $termNormalized = preg_replace('/\s+/', ' ', strtolower($term));
+                if (isset($seenTermsExact[$termNormalized])) continue;
+                
+                if (stripos($processedText, $term) !== false) {
+                    $verseRefs[] = ['term' => $term, 'text' => $gr->getReferenceText(), 'obj' => $gr];
+                    $seenTermsExact[$termNormalized] = true;
                 }
             }
 
+            // Sort and Dedup
+            $refsWithPos = [];
+            foreach ($verseRefs as $ref) {
+                $term = $ref['term'];
+                $pos = 0;
+                if ($term) {
+                    $foundPos = stripos($processedText, $term);
+                    $pos = ($foundPos !== false) ? $foundPos : 0;
+                }
+                $refsWithPos[] = ['pos' => $pos, 'ref' => $ref];
+            }
+            usort($refsWithPos, fn($a, $b) => $a['pos'] <=> $b['pos']);
+
+            // Inject References
+            $offset = 0;
+            
+            foreach ($refsWithPos as $itemRef) {
+                $refId = $refCounter++;
+                $pos = $itemRef['pos'];
+                $ref = $itemRef['ref'];
+                
+                // Marker for HTML
+                $marker = "<sup class=\"text-[10px] italic text-gray-500 cursor-pointer hover:underline px-1 rounded\" onclick=\"document.getElementById('footnote-{$refId}').scrollIntoView({behavior: 'smooth'})\">{$refId}</sup>";
+                
+                $adjustedPos = $pos + $offset;
+                $processedText = substr_replace($processedText, $marker, $adjustedPos, 0);
+                $offset += strlen($marker);
+
+                // Add to footnotes
+                $footnotes[] = [
+                    'id' => $refId,
+                    'verse' => $verse->getVerse(),
+                    'text' => $ref['text'],
+                    'term' => $ref['term']
+                ];
+            }
+            
+            $item['processed_text'] = $processedText;
+
             if ($text22) {
+                $text22Content = $text22->getText();
                 $referenceHtml = '';
                 // Refined regex to exclude '>' from translation to avoid capturing tags like <pb/> partially
-                preg_match_all('/(?P<translation>[^<>]+)<S>(?P<strongCode>[HG]\d+)<\/S>\s*<n>(?P<original>[^<]+)<\/n>/u', $text22, $matches, PREG_SET_ORDER);
+                preg_match_all('/(?P<translation>[^<>]+)<S>(?P<strongCode>[HG]\d+)<\/S>\s*<n>(?P<original>[^<]+)<\/n>/u', $text22Content, $matches, PREG_SET_ORDER);
                 
                 foreach ($matches as $match) {
                     $strongCode = $match['strongCode'];
@@ -108,6 +183,25 @@ final class TranslationController extends AbstractController
                 }
             }
             $item['original_html'] = trim($originalHtml);
+            
+            // Generate English HTML from VerseWords
+            $englishHtml = '';
+            foreach ($verse->getVerseWords() as $word) {
+                $strongCode = $word->getStrongCode();
+                $englishWord = $word->getWordEnglish();
+                
+                if ($englishWord) {
+                    // Replace spaces with non-breaking spaces to keep phrases together
+                    $englishWord = str_replace(' ', '&nbsp;', $englishWord);
+
+                    if ($strongCode) {
+                        $englishHtml .= "<span class=\"strong-word cursor-pointer hover:bg-yellow-200 transition-colors rounded px-0.5\" data-strong=\"{$strongCode}\">{$englishWord}</span> ";
+                    } else {
+                        $englishHtml .= "{$englishWord} ";
+                    }
+                }
+            }
+            $item['english_html'] = trim($englishHtml);
 
             $data[] = $item;
         }
@@ -116,6 +210,7 @@ final class TranslationController extends AbstractController
             'book' => $book,
             'chapter' => $chapter,
             'verses' => $data,
+            'footnotes' => $footnotes,
             'originalVersionId' => $originalVersionId,
         ]);
     }

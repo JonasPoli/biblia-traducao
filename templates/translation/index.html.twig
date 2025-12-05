@@ -11,61 +11,53 @@
         <h1 class="text-3xl font-bold text-gray-800">{{ book.name }} {{ chapter }}</h1>
     </div>
 
-    <div class="space-y-4">
-        {% for item in verses %}
-            <div class="bg-white rounded-lg shadow-sm p-4 border border-gray-200" id="verse-{{ item.verse.id }}">
-                <div class="flex justify-between items-start mb-2">
-                    <h2 class="text-md font-bold text-gray-900">
-                        <a href="{{ path('app_translation_verse', {bookId: book.id, chapter: chapter, verseNum: item.verse.verse}) }}" class="hover:text-blue-600 hover:underline">
-                            {{ book.name }} {{ chapter }}:{{ item.verse.verse }}
+    {# Bible Layout #}
+    <div class="max-w-4xl mx-auto bg-white shadow-lg p-8 md:p-12 min-h-screen">
+        {# Header #}
+        <div class="text-center mb-12">
+            <h1 class="text-4xl font-bold font-serif text-gray-900 mb-2">{{ book.name }}</h1>
+        </div>
+
+        {# Content #}
+        <div class="md:columns-2 gap-8 text-justify font-serif text-lg leading-relaxed text-gray-800 space-y-4">
+            {% for item in verses %}
+                {% if loop.first %}
+                    <div class="inline">
+                        <span class="float-left text-7xl font-bold leading-[0.8] mr-2 mt-1 font-serif text-gray-900">{{ chapter }}</span>
+                        <a href="{{ path('app_translation_verse', {bookId: book.id, chapter: chapter, verseNum: item.verse.verse}) }}" 
+                           class="font-bold text-lg align-top mr-1 text-black hover:text-blue-600 select-none transition-colors"
+                           title="Editar Versículo {{ item.verse.verse }}">
+                            {{ item.verse.verse }}
                         </a>
-                    </h2>
-                </div>
-
-                <div class="grid grid-cols-1 lg:grid-cols-2 gap-4">
-                    {# Left Column: Source Texts #}
-                    <div class="space-y-2">
-                        {% if item.original %}
-                            <div class="bg-gray-50 p-2 rounded border border-gray-200">
-                                <h3 class="text-[10px] font-semibold text-gray-500 uppercase mb-1">Original ({{ item.original.version.name }})</h3>
-                                <p class="font-serif text-base leading-relaxed">{{ item.original_html ? item.original_html|raw : item.original.text|raw }}</p>
-                            </div>
-                        {% endif %}
-
-                        {% if item.almeida_html %}
-                            <div class="bg-yellow-50 p-2 rounded border border-yellow-200">
-                                <h3 class="text-[10px] font-semibold text-yellow-600 uppercase mb-1">Almeida (Strong)</h3>
-                                <p class="font-serif text-base leading-relaxed">{{ item.almeida_html|raw }}</p>
-                            </div>
-                        {% endif %}
-
-                        {% if item.reference %}
-                            <div class="bg-blue-50 p-2 rounded border border-blue-100">
-                                <h3 class="text-[10px] font-semibold text-blue-500 uppercase mb-1">Referência ({{ item.reference.version.name }})</h3>
-                                <p class="text-gray-800 text-base leading-relaxed">{{ item.reference.text|raw }}</p>
-                            </div>
-                        {% endif %}
+                        {{ item.processed_text|raw }}
                     </div>
+                {% else %}
+                    <a href="{{ path('app_translation_verse', {bookId: book.id, chapter: chapter, verseNum: item.verse.verse}) }}" 
+                       class="font-bold text-lg align-top mr-1 text-black hover:text-blue-600 select-none transition-colors"
+                       title="Editar Versículo {{ item.verse.verse }}">
+                        {{ item.verse.verse }}
+                    </a>
+                    {{ item.processed_text|raw }}
+                {% endif %}
+            {% endfor %}
+        </div>
 
-                    {# Right Column: Translation Display #}
-                    <div>
-                        <h3 class="text-[10px] font-semibold text-green-600 uppercase mb-1">Tradução (Haroldo Dutra)</h3>
-                        <div class="p-2 border border-green-100 rounded bg-green-50/30 min-h-[4rem]">
-                            {% if item.target %}
-                                <div class="text-gray-900 text-base leading-relaxed">{{ item.target.text|raw }}</div>
-                            {% else %}
-                                <span class="text-gray-400 italic text-sm">Sem tradução</span>
-                            {% endif %}
+        {# Footnotes #}
+        {% if footnotes|length > 0 %}
+            <div class="mt-16 pt-8 border-t border-gray-300">
+                <h3 class="text-sm font-bold text-gray-500 uppercase mb-4">Notas de Rodapé</h3>
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-x-8 gap-y-1 text-sm text-gray-600 font-serif leading-tight">
+                    {% for note in footnotes %}
+                        <div id="footnote-{{ note.id }}" class="group">
+                            <span class="font-bold text-gray-900">{{ note.verse }}:</span>
+                            <span class="font-bold text-xs align-top text-blue-600">{{ note.id }}</span>
+                            <span class="font-bold">{{ note.term }}</span>
+                            {{ note.text|raw }}
                         </div>
-                        <div class="mt-1 text-right">
-                             <a href="{{ path('app_translation_verse', {bookId: book.id, chapter: chapter, verseNum: item.verse.verse}) }}" class="text-xs text-blue-600 hover:underline">
-                                Editar
-                            </a>
-                        </div>
-                    </div>
+                    {% endfor %}
                 </div>
             </div>
-        {% endfor %}
+        {% endif %}
     </div>
 </div>
 {% endblock %}
