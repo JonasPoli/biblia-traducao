@@ -95,6 +95,20 @@ final class TranslationController extends AbstractController
                 $item['almeida_html'] = trim($referenceHtml);
             }
 
+            // Generate Original HTML from VerseWords
+            $originalHtml = '';
+            foreach ($verse->getVerseWords() as $word) {
+                $strongCode = $word->getStrongCode();
+                $originalWord = $word->getWordOriginal();
+                
+                if ($strongCode) {
+                    $originalHtml .= "<span class=\"strong-word cursor-pointer hover:bg-yellow-200 transition-colors rounded px-0.5\" data-strong=\"{$strongCode}\">{$originalWord}</span> ";
+                } else {
+                    $originalHtml .= "{$originalWord} ";
+                }
+            }
+            $item['original_html'] = trim($originalHtml);
+
             $data[] = $item;
         }
 

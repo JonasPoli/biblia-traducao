@@ -28,7 +28,7 @@
                         {% if item.original %}
                             <div class="bg-gray-50 p-2 rounded border border-gray-200">
                                 <h3 class="text-[10px] font-semibold text-gray-500 uppercase mb-1">Original ({{ item.original.version.name }})</h3>
-                                <p class="font-serif text-base leading-relaxed">{{ item.original.text|raw }}</p>
+                                <p class="font-serif text-base leading-relaxed">{{ item.original_html ? item.original_html|raw : item.original.text|raw }}</p>
                             </div>
                         {% endif %}
 
