@@ -6,38 +6,38 @@ module.exports = {
     "./templates/**/*.html.twig",
   ],
   theme: {
-    fontFamily:{
-        'body':['Inter','sans-serif'],
-        'sans':['Inter','sans-serif']
-      },
+    fontFamily: {
+      'body': ['Inter', 'sans-serif'],
+      'sans': ['Inter', 'sans-serif']
+    },
     extend: {
-      colors:{
+      colors: {
         'primary': {
-            DEFAULT:'#0769a1',
-            light: '#1679b1',
+          DEFAULT: '#8A8455',
+          light: '#9B9566',
         },
       },
-        spacing:{
-            '55vw':'55vw'
+      spacing: {
+        '55vw': '55vw'
+      },
+      container: {
+        center: true,
+        padding: {
+          DEFAULT: '1rem',
+          sm: '2rem',
         },
-        container:{
-            center:true,
-            padding:{
-                DEFAULT: '1rem',
-                sm:'2rem',
-            },
-            screens: {
-                sm: '600px',
-                md: '728px',
-                lg: '984px',
-                xl: '1240px',
-                '2xl': '1240px',
-            },
-        }
+        screens: {
+          sm: '600px',
+          md: '728px',
+          lg: '984px',
+          xl: '1240px',
+          '2xl': '1240px',
+        },
+      }
     },
   },
   plugins: [
-      //require('@tailwindcss/forms'),
-      //require('flowbite/plugin')
+    //require('@tailwindcss/forms'),
+    //require('flowbite/plugin')
   ],
 }
