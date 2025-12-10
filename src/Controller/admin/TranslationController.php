@@ -149,7 +149,7 @@ final class TranslationController extends AbstractController
                 // Add to footnotes
                 $footnotes[] = [
                     'id' => $refId,
-                    'verse' => $verse->getVerse(),
+                    'verse' => "{$chapter}:{$verse->getVerse()}",
                     'text' => $ref['text'],
                     'term' => $ref['term']
                 ];

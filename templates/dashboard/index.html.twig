@@ -9,28 +9,50 @@
     </div>
 
     {# Stats Section #}
-    <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
-        <div class="bg-white p-6 rounded-lg shadow-sm border border-gray-100">
-            <h3 class="text-sm font-semibold text-gray-500 uppercase mb-2">Total de Versículos</h3>
-            <p class="text-3xl font-bold text-gray-900">{{ stats.total }}</p>
-        </div>
-        <div class="bg-white p-6 rounded-lg shadow-sm border border-gray-100">
-            <h3 class="text-sm font-semibold text-gray-500 uppercase mb-2">Versículos Traduzidos</h3>
-            <p class="text-3xl font-bold text-green-600">{{ stats.translated }}</p>
-        </div>
-        <div class="bg-white p-6 rounded-lg shadow-sm border border-gray-100">
-            <h3 class="text-sm font-semibold text-gray-500 uppercase mb-2">Progresso Geral</h3>
-            <div class="flex items-end gap-2">
-                <p class="text-3xl font-bold text-blue-600">
-                    {% if stats.total > 0 %}
-                        {{ ((stats.translated / stats.total) * 100)|number_format(1) }}%
-                    {% else %}
-                        0%
-                    {% endif %}
-                </p>
+    {# Stats Section #}
+    <div class="relative overflow-hidden bg-white rounded-3xl p-8 mb-12 shadow-xl shadow-slate-200/60 border border-slate-100">
+        {# Decorative Background #}
+        <div class="absolute top-0 right-0 -mr-16 -mt-16 w-64 h-64 bg-blue-50 rounded-full mix-blend-multiply filter blur-3xl opacity-50 animate-blob"></div>
+        <div class="absolute bottom-0 left-0 -ml-16 -mb-16 w-64 h-64 bg-purple-50 rounded-full mix-blend-multiply filter blur-3xl opacity-50 animate-blob animation-delay-2000"></div>
+        <div class="absolute inset-0 bg-[url('https://grainy-gradients.vercel.app/noise.svg')] opacity-5"></div>
+
+        <div class="relative z-10 grid grid-cols-1 md:grid-cols-3 gap-8 md:divide-x divide-slate-100">
+            {# Total Verses #}
+            <div class="flex items-center gap-4 px-4">
+                <div class="p-3 bg-blue-50/50 rounded-2xl backdrop-blur-sm ring-1 ring-blue-100/50">
+                    <sl-icon name="book" class="text-3xl text-blue-600"></sl-icon>
+                </div>
+                <div>
+                    <h3 class="text-xs font-bold text-slate-400 uppercase tracking-wider mb-1">Total de Versículos</h3>
+                    <p class="text-3xl font-bold text-slate-900 tracking-tight leading-none">{{ stats.total|number_format(0, ',', '.') }}</p>
+                </div>
             </div>
-            <div class="w-full bg-gray-200 rounded-full h-2.5 mt-2">
-                <div class="bg-blue-600 h-2.5 rounded-full" style="width: {{ stats.total > 0 ? (stats.translated / stats.total) * 100 : 0 }}%"></div>
+
+            {# Translated #}
+            <div class="flex items-center gap-4 px-4">
+                <div class="p-3 bg-emerald-50/50 rounded-2xl backdrop-blur-sm ring-1 ring-emerald-100/50">
+                    <sl-icon name="translate" class="text-3xl text-emerald-600"></sl-icon>
+                </div>
+                <div>
+                    <h3 class="text-xs font-bold text-slate-400 uppercase tracking-wider mb-1">Traduzidos</h3>
+                    <p class="text-3xl font-bold text-slate-900 tracking-tight leading-none">{{ stats.translated|number_format(0, ',', '.') }}</p>
+                </div>
+            </div>
+
+            {# Progress #}
+            <div class="px-4">
+                 <div class="flex justify-between items-end mb-3">
+                    <h3 class="text-xs font-bold text-slate-400 uppercase tracking-wider">Progresso Geral</h3>
+                    <span class="text-3xl font-bold text-slate-900 tracking-tight leading-none">
+                        {{ stats.total > 0 ? ((stats.translated / stats.total) * 100)|number_format(1) : 0 }}%
+                    </span>
+                </div>
+                <div class="w-full bg-slate-100 rounded-full h-3 overflow-hidden shadow-inner">
+                    <div class="h-full rounded-full bg-gradient-to-r from-blue-500 to-emerald-500 transition-all duration-1000 ease-out relative shadow-sm" 
+                         style="width: {{ stats.total > 0 ? (stats.translated / stats.total) * 100 : 0 }}%">
+                         <div class="absolute inset-0 bg-white/20 animate-pulse"></div>
+                    </div>
+                </div>
             </div>
         </div>
     </div>

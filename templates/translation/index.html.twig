@@ -34,47 +34,57 @@
     </div>
 
     {# Bible Layout #}
-    <div class="max-w-4xl mx-auto bg-white shadow-lg p-8 md:p-12 min-h-screen">
+    <div class="max-w-5xl mx-auto bg-[#fdfbf7] shadow-xl shadow-slate-200/50 rounded-lg p-8 md:p-16 min-h-screen border border-stone-200/60 relative overflow-hidden text-gray-900">
+        
+        {# Decorative Spine Effect #}
+        <div class="absolute inset-y-0 left-0 w-px bg-gradient-to-b from-transparent via-stone-300 to-transparent opacity-20 hidden md:block" style="left: 50%;"></div>
+
         {# Header #}
-        <div class="text-center mb-12">
-            <h1 class="text-4xl font-bold font-serif text-gray-900 mb-2">{{ book.name }}</h1>
+        <div class="text-center mb-16 relative">
+            <span class="block text-xs font-bold tracking-[0.2em] text-stone-400 uppercase mb-2">Sagradas Escrituras</span>
+            <h1 class="text-5xl font-bold font-serif text-gray-900 mb-2 tracking-tight">{{ book.name }}</h1>
+            <div class="w-16 h-1 bg-stone-800 mx-auto mt-6"></div>
         </div>
 
         {# Content #}
-        <div class="md:columns-2 gap-8 text-justify font-serif text-lg leading-relaxed text-gray-800 space-y-4">
+        <div class="md:columns-2 gap-12 text-justify font-serif text-[1.15rem] leading-[1.8] text-gray-800 space-y-0 first-letter:float-left">
             {% for item in verses %}
                 {% if loop.first %}
                     <div class="inline">
-                        <span class="float-left text-7xl font-bold leading-[0.8] mr-2 mt-1 font-serif text-gray-900">{{ chapter }}</span>
+                        <span class="float-left text-8xl font-black leading-[0.75] mr-3 -ml-1 mt-1 font-serif text-gray-900 select-none">{{ chapter }}</span>
                         <a href="{{ path('app_translation_verse', {bookId: book.id, chapter: chapter, verseNum: item.verse.verse}) }}" 
-                           class="font-bold text-lg align-top mr-1 text-black hover:text-blue-600 select-none transition-colors"
+                           class="font-bold text-lg align-baseline mr-1 text-[#6a5757] hover:text-blue-600 select-none transition-colors no-underline"
                            title="Editar Versículo {{ item.verse.verse }}">
                             {{ item.verse.verse }}
                         </a>
                         {{ item.processed_text|raw }}
                     </div>
                 {% else %}
-                    <a href="{{ path('app_translation_verse', {bookId: book.id, chapter: chapter, verseNum: item.verse.verse}) }}" 
-                       class="font-bold text-lg align-top mr-1 text-black hover:text-blue-600 select-none transition-colors"
-                       title="Editar Versículo {{ item.verse.verse }}">
-                        {{ item.verse.verse }}
-                    </a>
-                    {{ item.processed_text|raw }}
+                    <span class="inline-block hover:bg-yellow-50/50 transition-colors rounded decoration-clone px-0.5 -mx-0.5">
+                        <a href="{{ path('app_translation_verse', {bookId: book.id, chapter: chapter, verseNum: item.verse.verse}) }}" 
+                           class="font-bold text-lg align-baseline mr-1 text-[#6a5757] hover:text-blue-600 select-none transition-colors no-underline"
+                           title="Editar Versículo {{ item.verse.verse }}">
+                            {{ item.verse.verse }}
+                        </a>
+                        {{ item.processed_text|raw }}
+                    </span>
                 {% endif %}
             {% endfor %}
         </div>
 
         {# Footnotes #}
         {% if footnotes|length > 0 %}
-            <div class="mt-16 pt-8 border-t border-gray-300">
-                <h3 class="text-sm font-bold text-gray-500 uppercase mb-4">Notas de Rodapé</h3>
-                <div class="grid grid-cols-1 md:grid-cols-2 gap-x-8 gap-y-1 text-sm text-gray-600 font-serif leading-tight">
+            <div class="mt-20 pt-8 border-t border-stone-300">
+                <h3 class="text-xs font-bold text-stone-500 uppercase tracking-widest mb-6 text-center">Notas de Referência</h3>
+                <div class="columns-1 md:columns-2 gap-12 text-sm text-stone-600 font-serif leading-snug space-y-4">
                     {% for note in footnotes %}
-                        <div id="footnote-{{ note.id }}" class="group">
-                            <span class="font-bold text-gray-900">{{ note.verse }}:</span>
-                            <span class="font-bold text-xs align-top text-blue-600">{{ note.id }}</span>
-                            <span class="font-bold">{{ note.term }}</span>
-                            {{ note.text|raw }}
+                        <div id="footnote-{{ note.id }}" class="group flex gap-2 break-inside-avoid-column">
+                            <span class="font-bold text-[10px] text-blue-600 translate-y-0.5">{{ note.id }}</span>
+                            <div>
+                                <span class="font-bold text-gray-800 mr-1">{{ note.verse }}</span>
+                                <span class="font-semibold italic text-stone-700 mr-1">{{ note.term }}</span>
+                                <span class="text-stone-600">{{ note.text|raw }}</span>
+                            </div>
                         </div>
                     {% endfor %}
                 </div>
