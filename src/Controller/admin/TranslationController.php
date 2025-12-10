@@ -11,6 +11,7 @@ use App\Repository\VerseTextRepository;
 use App\Repository\GlobalReferenceRepository;
 use App\Repository\VerseReferenceRepository;
 use App\Repository\StrongDefinitionRepository;
+use App\Service\BibleDataService;
 use Doctrine\ORM\EntityManagerInterface;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\HttpFoundation\Request;
@@ -28,11 +29,14 @@ final class TranslationController extends AbstractController
     public function chapter(
         int $bookId,
         int $chapter,
-        BookRepository $bookRepository,
+        BibleVersionRepository $bibleVersionRepository,
         VerseRepository $verseRepository,
-        VerseTextRepository $verseTextRepository,
+        BookRepository $bookRepository,
         GlobalReferenceRepository $globalReferenceRepository,
-        VerseReferenceRepository $verseReferenceRepository
+        VerseReferenceRepository $verseReferenceRepository,
+        VerseTextRepository $verseTextRepository,
+        BibleDataService $bibleDataService,
+        Request $request
     ): Response {
         $book = $bookRepository->find($bookId);
         if (!$book) {
@@ -40,7 +44,7 @@ final class TranslationController extends AbstractController
         }
 
         // Determine original version based on testament
-        // Assuming Testament ID 1 is Old, 2 is New. 
+        // Assuming Testament ID 1 is Old, 2 is New.
         // Or check name? Let's check ID for now as it's standard.
         // Actually, let's check the ID.
         $originalVersionId = ($book->getTestament()->getId() === 1) ? self::OT_ORIGINAL_VERSION_ID : self::NT_ORIGINAL_VERSION_ID;
@@ -225,9 +229,14 @@ final class TranslationController extends AbstractController
             $data[] = $item;
         }
 
+        // Get total chapters for pagination
+        $bookData = $bibleDataService->getBooks()[$book->getId()] ?? null;
+        $totalChapters = $bookData ? $bookData['chapters'] : 0;
+
         return $this->render('translation/index.html.twig', [
             'book' => $book,
             'chapter' => $chapter,
+            'totalChapters' => $totalChapters,
             'verses' => $data,
             'footnotes' => $footnotes,
             'originalVersionId' => $originalVersionId,

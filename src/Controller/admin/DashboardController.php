@@ -35,11 +35,13 @@ final class DashboardController extends AbstractController
 
         $chapters = $bookRepository->getChaptersWithProgress($id, self::TARGET_VERSION_ID);
         $visuals = $bibleDataService->getVisualsMap();
+        $relatedBooks = $bookRepository->findBy(['testament' => $book->getTestament()], ['bookOrder' => 'ASC']);
 
         return $this->render('dashboard/chapters.html.twig', [
             'book' => $book,
             'chapters' => $chapters,
             'visuals' => $visuals,
+            'relatedBooks' => $relatedBooks,
         ]);
     }
 }
