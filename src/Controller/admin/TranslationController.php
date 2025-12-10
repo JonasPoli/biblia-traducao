@@ -53,7 +53,7 @@ final class TranslationController extends AbstractController
         ];
 
         $verses = $verseRepository->findBy(['book' => $book, 'chapter' => $chapter], ['verse' => 'ASC']);
-        
+
         // Fetch References
         $globalReferences = $globalReferenceRepository->findAll();
         $specificReferences = $verseReferenceRepository->findByBook($bookId);
@@ -65,7 +65,7 @@ final class TranslationController extends AbstractController
         foreach ($verses as $verse) {
             $item = [];
             $item['verse'] = $verse;
-            
+
             // Fetch texts
             $textOriginal = $verseTextRepository->findOneBy(['verse' => $verse, 'version' => 5]); // Greek/Hebrew
             $text22 = $verseTextRepository->findOneBy(['verse' => $verse, 'version' => 22]); // Almeida
@@ -79,19 +79,22 @@ final class TranslationController extends AbstractController
             // Process Target Text for References
             $processedText = $textTarget ? $textTarget->getText() : '';
             $processedText = strip_tags($processedText, '<strong><em><b><i><u><span>'); // Keep basic formatting
-            
+
             // Logic to inject references (similar to BibleController)
             $verseRefs = [];
             $seenTermsExact = [];
-            
+
             // 1. Specific References
             foreach ($specificReferences as $sr) {
-                if ($sr->getVerse()->getId() !== $verse->getId()) continue;
+                if ($sr->getVerse()->getId() !== $verse->getId())
+                    continue;
                 $term = trim($sr->getTerm() ?: '');
-                if (!$term) continue;
+                if (!$term)
+                    continue;
                 $termNormalized = preg_replace('/\s+/', ' ', strtolower($term));
-                if (isset($seenTermsExact[$termNormalized])) continue;
-                
+                if (isset($seenTermsExact[$termNormalized]))
+                    continue;
+
                 $verseRefs[] = ['term' => $term, 'text' => $sr->getReferenceText(), 'obj' => $sr];
                 $seenTermsExact[$termNormalized] = true;
             }
@@ -99,10 +102,12 @@ final class TranslationController extends AbstractController
             // 2. Global References
             foreach ($globalReferences as $gr) {
                 $term = trim($gr->getTerm() ?: '');
-                if (!$term) continue;
+                if (!$term)
+                    continue;
                 $termNormalized = preg_replace('/\s+/', ' ', strtolower($term));
-                if (isset($seenTermsExact[$termNormalized])) continue;
-                
+                if (isset($seenTermsExact[$termNormalized]))
+                    continue;
+
                 if (stripos($processedText, $term) !== false) {
                     $verseRefs[] = ['term' => $term, 'text' => $gr->getReferenceText(), 'obj' => $gr];
                     $seenTermsExact[$termNormalized] = true;
@@ -124,15 +129,15 @@ final class TranslationController extends AbstractController
 
             // Inject References
             $offset = 0;
-            
+
             foreach ($refsWithPos as $itemRef) {
                 $refId = $refCounter++;
                 $pos = $itemRef['pos'];
                 $ref = $itemRef['ref'];
-                
+
                 // Marker for HTML
                 $marker = "<sup class=\"text-[10px] italic text-gray-500 cursor-pointer hover:underline px-1 rounded\" onclick=\"document.getElementById('footnote-{$refId}').scrollIntoView({behavior: 'smooth'})\">{$refId}</sup>";
-                
+
                 $adjustedPos = $pos + $offset;
                 $processedText = substr_replace($processedText, $marker, $adjustedPos, 0);
                 $offset += strlen($marker);
@@ -145,7 +150,7 @@ final class TranslationController extends AbstractController
                     'term' => $ref['term']
                 ];
             }
-            
+
             $item['processed_text'] = $processedText;
 
             if ($text22) {
@@ -153,11 +158,11 @@ final class TranslationController extends AbstractController
                 $referenceHtml = '';
                 // Refined regex to exclude '>' from translation to avoid capturing tags like <pb/> partially
                 preg_match_all('/(?P<translation>[^<>]+)<S>(?P<strongCode>[HG]\d+)<\/S>\s*<n>(?P<original>[^<]+)<\/n>/u', $text22Content, $matches, PREG_SET_ORDER);
-                
+
                 foreach ($matches as $match) {
                     $strongCode = $match['strongCode'];
                     $translationWord = trim($match['translation']);
-                    
+
                     // Clean translation word
                     $translationWordClean = preg_replace('/[.,!?:;()"\'-]+/', ' ', $translationWord);
                     // Remove artifacts like pb/, /S, etc.
@@ -175,27 +180,41 @@ final class TranslationController extends AbstractController
             foreach ($verse->getVerseWords() as $word) {
                 $strongCode = $word->getStrongCode();
                 $originalWord = $word->getWordOriginal();
-                
+
                 if ($strongCode) {
-                    $originalHtml .= "<span class=\"strong-word cursor-pointer hover:bg-yellow-200 transition-colors rounded px-0.5\" data-strong=\"{$strongCode}\">{$originalWord}</span> ";
+                    $ptType = $word->getPortugueseType();
+                    $span = "<span class=\"strong-word cursor-pointer hover:bg-yellow-200 transition-colors rounded px-0.5\" data-strong=\"{$strongCode}\">{$originalWord}</span>";
+
+                    if ($ptType) {
+                        $originalHtml .= "<sl-tooltip content=\"{$ptType}\">{$span}</sl-tooltip> ";
+                    } else {
+                        $originalHtml .= "{$span} ";
+                    }
                 } else {
                     $originalHtml .= "{$originalWord} ";
                 }
             }
             $item['original_html'] = trim($originalHtml);
-            
+
             // Generate English HTML from VerseWords
             $englishHtml = '';
             foreach ($verse->getVerseWords() as $word) {
                 $strongCode = $word->getStrongCode();
                 $englishWord = $word->getWordEnglish();
-                
+
                 if ($englishWord) {
                     // Replace spaces with non-breaking spaces to keep phrases together
                     $englishWord = str_replace(' ', '&nbsp;', $englishWord);
 
                     if ($strongCode) {
-                        $englishHtml .= "<span class=\"strong-word cursor-pointer hover:bg-yellow-200 transition-colors rounded px-0.5\" data-strong=\"{$strongCode}\">{$englishWord}</span> ";
+                        $ptType = $word->getPortugueseType();
+                        $span = "<span class=\"strong-word cursor-pointer hover:bg-yellow-200 transition-colors rounded px-0.5\" data-strong=\"{$strongCode}\">{$englishWord}</span>";
+
+                        if ($ptType) {
+                            $englishHtml .= "<sl-tooltip content=\"{$ptType}\">{$span}</sl-tooltip> ";
+                        } else {
+                            $englishHtml .= "{$span} ";
+                        }
                     } else {
                         $englishHtml .= "{$englishWord} ";
                     }
@@ -235,7 +254,8 @@ final class TranslationController extends AbstractController
         if (!$text) {
             // Allow saving empty text? Maybe. But let's assume at least something or just handle it.
             // If empty, it might mean clearing the translation.
-        }$verseText = $verseTextRepository->findOneBy([
+        }
+        $verseText = $verseTextRepository->findOneBy([
             'verse' => $verse,
             'version' => self::TARGET_VERSION_ID
         ]);
@@ -263,7 +283,7 @@ final class TranslationController extends AbstractController
             $history = new TranslationHistory();
             $history->setVerseText($verseText);
             $history->setOldText($verseText->getText() ?? '');
-            
+
             // Note: We are not tracking title history separately for now, 
             // but the history entry is created if either changes.
 
@@ -297,7 +317,9 @@ final class TranslationController extends AbstractController
         \App\Repository\VerseWordRepository $verseWordRepository,
         \App\Repository\VerseReferenceRepository $verseReferenceRepository,
         \App\Repository\GlobalReferenceRepository $globalReferenceRepository,
-        StrongDefinitionRepository $strongDefinitionRepository
+
+        StrongDefinitionRepository $strongDefinitionRepository,
+        \App\Service\StrongFormatter $strongFormatter
     ): Response {
         $book = $bookRepository->find($bookId);
         if (!$book) {
@@ -376,42 +398,67 @@ final class TranslationController extends AbstractController
             if ($text22) {
                 $originalHtml = '';
                 $referenceHtml = '';
-                
+
                 // Refined regex to exclude '>' from translation to avoid capturing tags like <pb/> partially
                 preg_match_all('/(?P<translation>[^<>]+)<S>(?P<strongCode>[HG]\d+)<\/S>\s*<n>(?P<original>[^<]+)<\/n>/u', $text22, $matches, PREG_SET_ORDER);
-                
+
                 foreach ($matches as $match) {
                     $strongCode = $match['strongCode'];
-                    $originalWord = trim($match['original']);
                     $translationWord = trim($match['translation']);
-                    
+
                     // Clean translation word
                     $translationWordClean = preg_replace('/[.,!?:;()"\'-]+/', ' ', $translationWord);
                     // Remove artifacts like pb/, /S, etc.
                     $translationWordClean = str_replace(['/S>', '<S>', '</S>', 'pb/>', 'pb/'], '', $translationWordClean);
                     $translationWordClean = trim($translationWordClean);
 
-                    $originalHtml .= "<span class=\"strong-word cursor-pointer hover:bg-yellow-200 transition-colors rounded px-0.5\" data-strong=\"{$strongCode}\">{$originalWord}</span> ";
                     // Use cleaned translation word
                     $referenceHtml .= "<span class=\"strong-word cursor-pointer hover:bg-yellow-200 transition-colors rounded px-0.5\" data-strong=\"{$strongCode}\">{$translationWordClean}</span> ";
                 }
-                
-                $item['original_html'] = trim($originalHtml);
                 $item['reference_html'] = trim($referenceHtml);
             }
+
+            // Generate Original HTML from VerseWords
+            $originalHtml = '';
+            foreach ($cv->getVerseWords() as $word) {
+                $strongCode = $word->getStrongCode();
+                $originalWord = $word->getWordOriginal();
+
+                if ($strongCode) {
+                    $ptType = $word->getPortugueseType();
+                    $span = "<span class=\"strong-word cursor-pointer hover:bg-yellow-200 transition-colors rounded px-0.5\" data-strong=\"{$strongCode}\" data-original=\"{$originalWord}\">{$originalWord}</span>";
+
+                    if ($ptType) {
+                        $originalHtml .= "<sl-tooltip content=\"{$ptType}\">{$span}</sl-tooltip> ";
+                    } else {
+                        $originalHtml .= "{$span} ";
+                    }
+                } else {
+                    $originalHtml .= "{$originalWord} ";
+                }
+            }
+            $item['original_html'] = trim($originalHtml);
 
             // Generate English HTML from VerseWords
             $englishHtml = '';
             foreach ($cv->getVerseWords() as $word) {
                 $strongCode = $word->getStrongCode();
                 $englishWord = $word->getWordEnglish();
-                
+
                 if ($englishWord) {
                     // Replace spaces with non-breaking spaces to keep phrases together
                     $englishWord = str_replace(' ', '&nbsp;', $englishWord);
 
                     if ($strongCode) {
-                        $englishHtml .= "<span class=\"strong-word cursor-pointer hover:bg-yellow-200 transition-colors rounded px-0.5\" data-strong=\"{$strongCode}\">{$englishWord}</span> ";
+                        $ptType = $word->getPortugueseType();
+                        $originalWordEscaped = htmlspecialchars($word->getWordOriginal(), ENT_QUOTES);
+                        $span = "<span class=\"strong-word cursor-pointer hover:bg-yellow-200 transition-colors rounded px-0.5\" data-strong=\"{$strongCode}\" data-original=\"{$originalWordEscaped}\">{$englishWord}</span>";
+
+                        if ($ptType) {
+                            $englishHtml .= "<sl-tooltip content=\"{$ptType}\">{$span}</sl-tooltip> ";
+                        } else {
+                            $englishHtml .= "{$span} ";
+                        }
                     } else {
                         $englishHtml .= "{$englishWord} ";
                     }
@@ -433,17 +480,22 @@ final class TranslationController extends AbstractController
             }
         }
         $strongCodes = array_unique($strongCodes);
-        
+
         // Fetch definitions
         $strongDefinitions = [];
         if (!empty($strongCodes)) {
             $definitions = $strongDefinitionRepository->findBy(['code' => $strongCodes]);
             foreach ($definitions as $def) {
+                // Format Full Definition Hierarchy
+                $formattedFullDef = $strongFormatter->formatFullDefinition($def->getFullDefinition());
+
                 $strongDefinitions[$def->getCode()] = [
                     'title' => $def->getHebrewWord() ?: $def->getGreekWord(),
+                    'originalWord' => $def->getHebrewWord() ?: $def->getGreekWord(),
+                    'code' => $def->getCode(),
                     'transliteration' => $def->getTransliteration(),
-                    'fullDefinition' => $def->getFullDefinition(),
-                    'definition' => $def->getDefinition(),
+                    'fullDefinition' => $formattedFullDef, // Pre-formatted HTML
+                    'definition' => $strongFormatter->transform($def->getDefinition() ?? ''),
                     'pronunciation' => $def->getPronunciation(),
                     'lemma' => $def->getLemma()
                 ];
@@ -453,7 +505,7 @@ final class TranslationController extends AbstractController
         // Fetch Global References
         $allGlobalReferences = $globalReferenceRepository->findAll();
         $globalReferences = [];
-        
+
         // Filter based on Target Translation (Haroldo Dutra)
         // Check if the GlobalReference 'term' appears in the translation text (case-insensitive)
         if ($texts['target']) {
@@ -475,15 +527,15 @@ final class TranslationController extends AbstractController
 
         if ($verseText22) {
             $text22 = $verseText22->getText();
-            
+
             // Generate HTML for display (same logic as chapter view)
             $referenceHtml = '';
             preg_match_all('/(?P<translation>[^<>]+)<S>(?P<strongCode>[HG]\d+)<\/S>\s*<n>(?P<original>[^<]+)<\/n>/u', $text22, $matchesHtml, PREG_SET_ORDER);
-            
+
             foreach ($matchesHtml as $match) {
                 $strongCode = $match['strongCode'];
                 $translationWord = trim($match['translation']);
-                
+
                 // Clean translation word
                 $translationWordClean = preg_replace('/[.,!?:;()"\'-]+/', ' ', $translationWord);
                 $translationWordClean = str_replace(['/S>', '<S>', '</S>', 'pb/>', 'pb/'], '', $translationWordClean);
@@ -494,12 +546,20 @@ final class TranslationController extends AbstractController
             $almeidaHtml = trim($referenceHtml);
 
 
+            // Create a map of Strong Code -> Portuguese Type from VerseWords
+            $strongTypeMap = [];
+            foreach ($verse->getVerseWords() as $vw) {
+                if ($vw->getStrongCode()) {
+                    $strongTypeMap[$vw->getStrongCode()] = $vw->getPortugueseType();
+                }
+            }
+
             // Parse for Tabs (existing logic)
             // Regex to match: Translation<S>StrongCode</S> <n>Original</n>
             // Note: The text might have extra tags or spaces.
             // Example: Os homens<S>H582</S> <n>אֱנוֹשׁ</n><S>H582</S>
             // We capture: Translation (before <S>), StrongCode (inside first <S>), Original (inside <n>)
-            
+
             // Refined regex to exclude '>' from translation to avoid capturing tags like <pb/> partially
             preg_match_all('/(?P<translation>[^<>]+)<S>(?P<strongCode>[HG]\d+)<\/S>\s*<n>(?P<original>[^<]+)<\/n>/u', $text22, $matches, PREG_SET_ORDER);
 
@@ -520,6 +580,7 @@ final class TranslationController extends AbstractController
                     'wordOriginal' => trim($match['original']),
                     'translation' => $translation,
                     'strongCode' => $strongCode,
+                    'portugueseType' => $strongTypeMap[$strongCode] ?? '',
                     'transliteration' => $definition ? $definition->getTransliteration() : '',
                     'fullDefinition' => $definition ? $definition->getFullDefinition() : '',
                     'definition' => $definition ? $definition->getDefinition() : '',
@@ -533,9 +594,16 @@ final class TranslationController extends AbstractController
         foreach ($words as $word) {
             $strongCode = $word->getStrongCode();
             $originalWord = $word->getWordOriginal();
-            
+
             if ($strongCode) {
-                $originalHtml .= "<span class=\"strong-word cursor-pointer hover:bg-yellow-200 transition-colors rounded px-0.5\" data-strong=\"{$strongCode}\">{$originalWord}</span> ";
+                $ptType = $word->getPortugueseType();
+                $span = "<span class=\"strong-word cursor-pointer hover:bg-yellow-200 transition-colors rounded px-0.5\" data-strong=\"{$strongCode}\" data-original=\"{$originalWord}\">{$originalWord}</span>";
+
+                if ($ptType) {
+                    $originalHtml .= "<sl-tooltip content=\"{$ptType}\">{$span}</sl-tooltip> ";
+                } else {
+                    $originalHtml .= "{$span} ";
+                }
             } else {
                 $originalHtml .= "{$originalWord} ";
             }
@@ -547,13 +615,21 @@ final class TranslationController extends AbstractController
         foreach ($words as $word) {
             $strongCode = $word->getStrongCode();
             $englishWord = $word->getWordEnglish();
-            
+
             if ($englishWord) {
                 // Replace spaces with non-breaking spaces to keep phrases together
                 $englishWord = str_replace(' ', '&nbsp;', $englishWord);
-                
+
                 if ($strongCode) {
-                    $englishHtml .= "<span class=\"strong-word cursor-pointer hover:bg-yellow-200 transition-colors rounded px-0.5\" data-strong=\"{$strongCode}\">{$englishWord}</span> ";
+                    $ptType = $word->getPortugueseType();
+                    $originalWordEscaped = htmlspecialchars($word->getWordOriginal(), ENT_QUOTES);
+                    $span = "<span class=\"strong-word cursor-pointer hover:bg-yellow-200 transition-colors rounded px-0.5\" data-strong=\"{$strongCode}\" data-original=\"{$originalWordEscaped}\">{$englishWord}</span>";
+
+                    if ($ptType) {
+                        $englishHtml .= "<sl-tooltip content=\"{$ptType}\">{$span}</sl-tooltip> ";
+                    } else {
+                        $englishHtml .= "{$span} ";
+                    }
                 } else {
                     $englishHtml .= "{$englishWord} ";
                 }
@@ -732,7 +808,7 @@ final class TranslationController extends AbstractController
         $term = $request->request->get('term');
         $referenceText = $request->request->get('referenceText');
         $foreignWord = $request->request->get('foreignWord');
-        
+
         // We need verse info to redirect back. Since GlobalReference is not linked to verse,
         // we must get it from the request (referer or hidden field). 
         // Let's assume passed as query param or form field for redirection purposes.
@@ -787,3 +863,4 @@ final class TranslationController extends AbstractController
         ]);
     }
 }
+

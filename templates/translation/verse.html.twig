@@ -328,6 +328,7 @@
                     {% for word in parsedWords %}
                         <button 
                             data-target="word-{{ loop.index }}"
+                            data-pt-type="{{ word.portugueseType }}"
                             class="js-tab-btn px-6 py-3 font-medium text-sm whitespace-nowrap transition-colors text-gray-500 hover:text-gray-700 text-center"
                         >
                             <div class="font-bold">{{ word.wordOriginal }}</div>
@@ -402,21 +403,36 @@
                                                 el.classList.add('bg-yellow-200', 'text-gray-900');
                                             });
 
+
                                             // Show Footer Definition
                                             if (strongDefinitions[strongId]) {
                                                 const def = strongDefinitions[strongId];
-                                                footerTitle.textContent = def.title || '';
+                                                const originalWord = word.dataset.original || def.originalWord || '';
                                                 
-                                                let metaText = '';
-                                                if (def.transliteration) metaText += `<span class="italic">${def.transliteration}</span>`;
-                                                if (def.pronunciation) metaText += ` • <span class="text-gray-500">${def.pronunciation}</span>`;
-                                                if (def.lemma) metaText += ` • <span class="font-serif">${def.lemma}</span>`;
-                                                footerTransliteration.innerHTML = metaText;
+                                                // 1. Title: Original Word
+                                                footerTitle.innerHTML = originalWord;
 
-                                                let defHtml = '';
-                                                if (def.definition) defHtml += `<div class="mb-2 font-medium">${def.definition}</div>`;
-                                                if (def.fullDefinition) defHtml += `<div>${def.fullDefinition}</div>`;
-                                                footerDefinition.innerHTML = defHtml;
+                                                // 2. Subtitle: Code + Transliteration
+                                                // Logic for H/G prefix is handled by the Code itself usually, checking if explicit add is needed
+                                                // Assuming Code already has the prefix as per DB storage (H1234), otherwise we'd need context. Used strongId/code.
+                                                const code = def.code || strongId;
+                                                const transliteration = def.transliteration || '';
+                                                
+                                                const subtitleHtml = `
+                                                    <span class="font-bold text-blue-700 bg-blue-50 px-1.5 py-0.5 rounded text-xs">${code}</span>
+                                                    <span class="italic text-gray-600">${transliteration}</span>
+                                                `;
+                                                document.getElementById('strong-footer-subtitle').innerHTML = subtitleHtml;
+
+                                                // 3. Content: Definition (raw) + FullDefinition (raw/formatted)
+                                                let contentHtml = '';
+                                                if (def.definition) {
+                                                    contentHtml += `<div class="mb-3 font-medium text-gray-900">${def.definition}</div>`;
+                                                }
+                                                if (def.fullDefinition) {
+                                                    contentHtml += `<div class="text-sm text-gray-700 space-y-1">${def.fullDefinition}</div>`;
+                                                }
+                                                document.getElementById('strong-footer-content').innerHTML = contentHtml;
                                                 
                                                 footer.classList.remove('translate-y-full');
                                             }
@@ -441,11 +457,18 @@
                     </div>
 
                     {# Strong Definition Footer #}
-                    <div id="strong-definition-footer" class="fixed bottom-0 left-0 right-0 bg-white border-t border-gray-200 shadow-lg transform translate-y-full transition-transform duration-300 z-50 p-4 max-h-64 overflow-y-auto">
-                        <div class="max-w-7xl mx-auto">
-                            <h4 id="strong-footer-title" class="text-xl font-bold text-gray-900"></h4>
-                            <p id="strong-footer-transliteration" class="text-gray-600 italic mb-2"></p>
-                            <div id="strong-footer-definition" class="text-sm text-gray-800"></div>
+                    <div id="strong-definition-footer" class="fixed bottom-0 left-0 right-0 bg-white/95 backdrop-blur-sm border-t border-gray-200 shadow-[0_-4px_6px_-1px_rgba(0,0,0,0.1)] transform translate-y-full transition-transform duration-300 z-50 p-4 max-h-[35vh] overflow-y-auto">
+                        <div class="max-w-7xl mx-auto flex gap-4 items-start">
+                            <div class="flex-1">
+                                <div class="flex flex-col gap-1 mb-2">
+                                    <h4 id="strong-footer-title" class="text-xl font-bold text-gray-900 font-serif tracking-wide"></h4>
+                                    <div id="strong-footer-subtitle" class="text-sm text-gray-600 flex items-center gap-2"></div>
+                                </div>
+                                <div id="strong-footer-content" class="text-sm text-gray-800 leading-snug font-sans mt-2 border-t border-gray-100 pt-2 h-full"></div>
+                            </div>
+                            <button onclick="document.getElementById('strong-definition-footer').classList.add('translate-y-full')" class="text-gray-400 hover:text-gray-600 transition-colors p-1 rounded-full hover:bg-gray-100">
+                                <sl-icon name="x-lg" class="text-lg"></sl-icon>
+                            </button>
                         </div>
                     </div>
                     {# Word Tabs #}
@@ -496,7 +519,17 @@
                         if (container && container.dataset.loaded === 'false') {
                             const strongCode = container.dataset.strong;
                             if (strongCode) {
-                                fetch(`/api/word-detail/${strongCode}`)
+                                // Extract translation from button (e.g. "(Livro)" -> "Livro")
+                                let term = '';
+                                const translationDiv = btn.querySelector('.text-xs');
+                                if (translationDiv) {
+                                    term = translationDiv.innerText.replace(/^\(/, '').replace(/\)$/, '').trim();
+                                }
+                                
+                                const ptType = btn.dataset.ptType || '';
+                                const url = `/api/word-detail/${strongCode}?term=${encodeURIComponent(term)}&pt_type=${encodeURIComponent(ptType)}`;
+
+                                fetch(url)
                                     .then(response => response.text())
                                     .then(html => {
                                         container.innerHTML = html;
