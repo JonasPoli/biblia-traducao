@@ -50,19 +50,19 @@ class DatabaseImportCommand extends Command
 
         $sqlDir = $this->params->get('kernel.project_dir') . '/sql';
         $fileArg = $input->getArgument('file');
-        
+
         if ($fileArg === 'latest.sql') {
-             // Find the most recent file in the directory
-             $files = glob($sqlDir . '/*.sql');
-             if ($files) {
-                 usort($files, function($a, $b) {
-                     return filemtime($b) - filemtime($a);
-                 });
-                 $sqlFile = $files[0];
-                 $io->info('Using latest export: ' . basename($sqlFile));
-             } else {
-                 $sqlFile = $sqlDir . '/latest.sql'; // Fallback
-             }
+            // Find the most recent file in the directory
+            $files = glob($sqlDir . '/*.sql');
+            if ($files) {
+                usort($files, function ($a, $b) {
+                    return filemtime($b) - filemtime($a);
+                });
+                $sqlFile = $files[0];
+                $io->info('Using latest export: ' . basename($sqlFile));
+            } else {
+                $sqlFile = $sqlDir . '/latest.sql'; // Fallback
+            }
         } else {
             $sqlFile = $sqlDir . '/' . $fileArg;
         }
@@ -82,7 +82,7 @@ class DatabaseImportCommand extends Command
 
         // Recreate the database
         $io->section('Recreating Database');
-        
+
         if (str_contains($driver, 'mysql')) {
             // Drop and Create for MySQL
             $commands = [
@@ -114,14 +114,15 @@ class DatabaseImportCommand extends Command
         $io->section('Importing Data');
         if (str_contains($driver, 'mysql')) {
             // MySQL import, include database name with -D flag
+            // Use sed to replace utf8mb4_0900_ai_ci with utf8mb4_unicode_ci for compatibility
             $cmd = sprintf(
-                'mysql -u%s -p%s -h%s -P%d -D%s < %s',
+                'sed "s/utf8mb4_0900_ai_ci/utf8mb4_unicode_ci/g" %s | mysql -u%s -p%s -h%s -P%d -D%s',
+                escapeshellarg($sqlFile),
                 escapeshellarg($user),
                 escapeshellarg($password),
                 escapeshellarg($host),
                 $port,
-                $database,
-                escapeshellarg($sqlFile)
+                $database
             );
         } elseif (str_contains($driver, 'pgsql')) {
             // PostgreSQL import, include database name with -d flag
