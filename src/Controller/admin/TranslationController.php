@@ -1,6 +1,6 @@
 <?php
 
-namespace App\Controller\admin;
+namespace App\Controller\Admin;
 
 use App\Entity\TranslationHistory;
 use App\Entity\VerseText;
@@ -326,10 +326,32 @@ final class TranslationController extends AbstractController
         \App\Repository\VerseWordRepository $verseWordRepository,
         \App\Repository\VerseReferenceRepository $verseReferenceRepository,
         \App\Repository\GlobalReferenceRepository $globalReferenceRepository,
+        \App\Repository\UserRepository $userRepository,
 
         StrongDefinitionRepository $strongDefinitionRepository,
         \App\Service\StrongFormatter $strongFormatter
     ): Response {
+        $user = $this->getUser();
+        // Recipient Logic for Messages
+        $recipients = [];
+        if ($this->isGranted('ROLE_REVIEWER')) {
+            // Reviewers can only send to Translators
+            // Assuming we have a method to find by role or we filter.
+            // Since roles are JSON array, we might need a custom query or filter in PHP.
+            // Let's keep it simple: Fetch all and filter? Or use a custom repository method.
+            // For efficiency, let's try a custom repository method if it exists, otherwise PHP filter.
+            // Checking UserRepository first.
+            $allUsers = $userRepository->findAll();
+            $recipients = array_filter($allUsers, function ($u) {
+                return in_array('ROLE_TRANSLATOR', $u->getRoles());
+            });
+        } elseif ($this->isGranted('ROLE_ADMIN')) {
+            $recipients = $userRepository->findAll();
+        } else {
+            // Fallback: Translators send to Reviewers/Admins?
+            // Specs didn't specify. Left broad for others, restricted for Reviewer.
+            $recipients = $userRepository->findAll();
+        }
         $book = $bookRepository->find($bookId);
         if (!$book) {
             throw $this->createNotFoundException('Book not found');
@@ -664,6 +686,7 @@ final class TranslationController extends AbstractController
             'occurrences' => $occurrences,
             'strongPrefix' => $strongPrefix,
             'strongDefinitions' => $strongDefinitions,
+            'recipients' => $recipients,
         ]);
     }
 

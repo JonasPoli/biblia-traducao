@@ -1,0 +1,126 @@
+{% extends 'admin/base.html.twig' %}
+
+{% block title %}Mensagens{% endblock %}
+
+{% block body %}
+ <div class="max-w-4xl mx-auto px-4 py-8">
+    <div class="flex items-center justify-between mb-6">
+        <h1 class="text-2xl font-bold text-slate-900 dark:text-white">Mensagens</h1>
+        <!-- Optional: Filter or New Message -->
+    </div>
+
+    <div class="bg-white dark:bg-slate-800 rounded-2xl shadow-sm ring-1 ring-slate-200 dark:ring-slate-700 overflow-hidden">
+        {% if conversations is empty %}
+            <div class="p-12 text-center text-slate-500 dark:text-slate-400">
+                <sl-icon name="chat" class="text-4xl mb-4 text-slate-300"></sl-icon>
+                <div class="text-lg font-medium text-slate-900 dark:text-white">Nenhuma conversa</div>
+                <p class="mt-1">Suas interações aparecerão aqui.</p>
+            </div>
+        {% else %}
+            <div class="divide-y divide-slate-100 dark:divide-slate-700/50">
+                {% for conv in conversations %}
+                    {# Logic to determine Contact and Last Message #}
+                    {% set contact = (conv.sender == app.user) ? conv.recipient : conv.sender %}
+                    
+                    {# Find the real last message (Root or Reply) #}
+                    {% set lastMsg = conv %}
+                    {% set unreadCount = 0 %}
+                    
+                    {# Check Root Unread #}
+                    {% if conv.recipient == app.user and conv.status == 'unread' %}
+                        {% set unreadCount = unreadCount + 1 %}
+                    {% endif %}
+
+                    {% for reply in conv.replies %}
+                        {% if reply.sentAt > lastMsg.sentAt %}
+                            {% set lastMsg = reply %}
+                        {% endif %}
+                        
+                        {% if reply.recipient == app.user and reply.status == 'unread' %}
+                            {% set unreadCount = unreadCount + 1 %}
+                        {% endif %}
+                    {% endfor %}
+
+                    {# Visual State #}
+                    {% set isResolved = (conv.status == 'resolved') %}
+                    
+                    <div onclick="openMessageModal({{ conv.id }})" 
+                         class="relative flex items-center gap-4 p-4 hover:bg-slate-50 dark:hover:bg-slate-700/50 transition-all cursor-pointer group {{ isResolved ? 'opacity-50 grayscale bg-slate-50' : 'bg-white dark:bg-slate-800' }}">
+                         
+                        <!-- Avatar -->
+                        <div class="shrink-0 relative">
+                            <div class="w-12 h-12 rounded-full bg-blue-100 flex items-center justify-center text-blue-700 font-bold text-lg dark:bg-blue-900 dark:text-blue-300">
+                                {{ contact.name|first }}
+                            </div>
+                            {% if unreadCount > 0 %}
+                                <div class="absolute -top-1 -right-1 w-5 h-5 bg-green-500 border-2 border-white dark:border-slate-800 rounded-full flex items-center justify-center text-[10px] text-white font-bold">
+                                    {{ unreadCount > 9 ? '9+' : unreadCount }}
+                                </div>
+                            {% endif %}
+                        </div>
+
+                        <!-- Content -->
+                        <div class="flex-1 min-w-0">
+                            <div class="flex justify-between items-baseline mb-1">
+                                <h3 class="text-sm font-semibold text-slate-900 dark:text-white truncate pr-2">
+                                    {{ contact.name }}
+                                </h3>
+                                <span class="text-xs text-slate-400 whitespace-nowrap {{ unreadCount > 0 ? 'text-green-600 font-bold' : '' }}">
+                                    {{ lastMsg.sentAt|date('H:i') }}
+                                    {% if lastMsg.sentAt|date('Y-m-d') != "now"|date('Y-m-d') %}
+                                        <span class="font-normal text-slate-400 ml-1">{{ lastMsg.sentAt|date('d/m') }}</span>
+                                    {% endif %}
+                                </span>
+                            </div>
+                            
+                            <div class="flex justify-between items-center">
+                                <p class="text-sm truncate text-slate-500 dark:text-slate-400 {{ unreadCount > 0 ? 'font-semibold text-slate-800 dark:text-slate-200' : '' }}">
+                                    {% if lastMsg.sender == app.user %}
+                                        <sl-icon name="check" class="text-xs mr-1 align-middle opacity-60"></sl-icon>
+                                    {% endif %}
+                                    {{ lastMsg.content }}
+                                </p>
+                                {% if unreadCount > 0 %}
+                                    <div class="w-2.5 h-2.5 bg-green-500 rounded-full shrink-0 ml-2"></div>
+                                {% endif %}
+                            </div>
+                        </div>
+
+                        <!-- Resolved Badge (Optional, overlay) -->
+                        {% if isResolved %}
+                            <div class="absolute right-4 top-4 px-2 py-0.5 rounded text-[10px] font-bold bg-slate-200 text-slate-600">
+                                RESOLVIDO
+                            </div>
+                        {% endif %}
+                    </div>
+                {% endfor %}
+            </div>
+        {% endif %}
+    </div>
+
+    <!-- Modal -->
+    <dialog id="message-modal" class="p-0 rounded-xl shadow-2xl backdrop:bg-slate-900/40 w-full max-w-2xl open:animate-fade-in">
+        <div id="message-modal-content" class="min-h-[200px] flex items-center justify-center">
+            <sl-spinner></sl-spinner>
+        </div>
+    </dialog>
+
+    <script>
+        function openMessageModal(id) {
+            const dialog = document.getElementById('message-modal');
+            const content = document.getElementById('message-modal-content');
+            dialog.showModal();
+            content.innerHTML = '<div class="p-12 flex justify-center"><sl-spinner class="text-4xl"></sl-spinner></div>';
+            
+            fetch('/admin/message/' + id)
+                .then(res => res.text())
+                .then(html => {
+                    content.innerHTML = html;
+                })
+                .catch(err => {
+                    content.innerHTML = '<div class="p-6 text-red-500">Erro ao carregar mensagem.</div>';
+                });
+        }
+    </script>
+ </div>
+{% endblock %}

@@ -4,113 +4,171 @@
 
 {% block body %}
 <div class="container mx-auto px-4 py-8">
-    <div class="mb-8 flex items-center justify-between">
-        <h1 class="text-3xl font-bold text-gray-800">Dashboard de Tradução</h1>
-    </div>
-
-    {# Stats Section #}
-    {# Stats Section #}
-    <div class="relative overflow-hidden bg-white dark:bg-slate-900 rounded-3xl p-8 mb-12 shadow-xl shadow-slate-200/60 dark:shadow-none border border-slate-100 dark:border-slate-800 transition-colors duration-300">
-        {# Decorative Background #}
-        <div class="absolute top-0 right-0 -mr-16 -mt-16 w-64 h-64 bg-blue-50 dark:bg-blue-900/20 rounded-full mix-blend-multiply dark:mix-blend-normal filter blur-3xl opacity-50 dark:opacity-30 animate-blob"></div>
-        <div class="absolute bottom-0 left-0 -ml-16 -mb-16 w-64 h-64 bg-purple-50 dark:bg-purple-900/20 rounded-full mix-blend-multiply dark:mix-blend-normal filter blur-3xl opacity-50 dark:opacity-30 animate-blob animation-delay-2000"></div>
-        <div class="absolute inset-0 bg-[url('https://grainy-gradients.vercel.app/noise.svg')] opacity-5 dark:opacity-10"></div>
-
-        <div class="relative z-10 grid grid-cols-1 md:grid-cols-3 gap-8 md:divide-x divide-slate-100 dark:divide-white/5">
-            {# Total Verses #}
-            <div class="flex items-center gap-4 px-4">
-                <div class="p-3 bg-blue-50/50 dark:bg-blue-500/10 rounded-2xl backdrop-blur-sm ring-1 ring-blue-100/50 dark:ring-blue-500/20">
-                    <sl-icon name="book" class="text-3xl text-blue-600 dark:text-blue-400"></sl-icon>
-                </div>
-                <div>
-                    <h3 class="text-xs font-bold text-slate-400 dark:text-slate-500 uppercase tracking-wider mb-1">Total de Versículos</h3>
-                    <p class="text-3xl font-bold text-slate-900 dark:text-white tracking-tight leading-none">{{ stats.total|number_format(0, ',', '.') }}</p>
-                </div>
-            </div>
-
-            {# Translated #}
-            <div class="flex items-center gap-4 px-4">
-                <div class="p-3 bg-emerald-50/50 dark:bg-emerald-500/10 rounded-2xl backdrop-blur-sm ring-1 ring-emerald-100/50 dark:ring-emerald-500/20">
-                    <sl-icon name="translate" class="text-3xl text-emerald-600 dark:text-emerald-400"></sl-icon>
-                </div>
-                <div>
-                    <h3 class="text-xs font-bold text-slate-400 dark:text-slate-500 uppercase tracking-wider mb-1">Traduzidos</h3>
-                    <p class="text-3xl font-bold text-slate-900 dark:text-white tracking-tight leading-none">{{ stats.translated|number_format(0, ',', '.') }}</p>
-                </div>
-            </div>
-
-            {# Progress #}
-            <div class="px-4">
-                 <div class="flex justify-between items-end mb-3">
-                    <h3 class="text-xs font-bold text-slate-400 dark:text-slate-500 uppercase tracking-wider">Progresso Geral</h3>
-                    <span class="text-3xl font-bold text-slate-900 dark:text-white tracking-tight leading-none">
-                        {{ stats.total > 0 ? ((stats.translated / stats.total) * 100)|number_format(1) : 0 }}%
-                    </span>
-                </div>
-                <div class="w-full bg-slate-100 dark:bg-slate-800 rounded-full h-3 overflow-hidden shadow-inner dark:shadow-none border border-transparent dark:border-white/5">
-                    <div class="h-full rounded-full bg-gradient-to-r from-blue-500 to-emerald-500 transition-all duration-1000 ease-out relative shadow-sm" 
-                         style="width: {{ stats.total > 0 ? (stats.translated / stats.total) * 100 : 0 }}%">
-                         <div class="absolute inset-0 bg-white/20 animate-pulse"></div>
-                    </div>
-                </div>
-            </div>
+    <div class="mb-8 flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
+        <div>
+            <h1 class="text-3xl font-bold text-gray-800 dark:text-white">Dashboard {{ app.user.workGroup == 0 ? '(Admin)' : '' }}</h1>
+            <p class="text-slate-500 text-sm">Bem-vindo, {{ app.user.name }}</p>
         </div>
     </div>
 
-    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-        {% for book in books %}
-            {% set percentage = book.total > 0 ? (book.translated / book.total * 100)|round(1) : 0 %}
-            
-            {% set visual = visuals[book.id] ?? null %}
-            {% set bgColorLight = visual ? visual.color_light : '#f8fafc' %}
-            {% set bgColorDark = visual ? visual.color_dark : '#1e293b' %}
-            {% set svgContent = visual ? visual.svg : '' %}
-            
-            <div class="group relative rounded-2xl shadow-sm hover:shadow-lg transition-all duration-300 overflow-hidden border border-slate-200 dark:border-slate-700 bg-[var(--book-color-light)] dark:bg-[var(--book-color-dark)]"
-                 style="--book-color-light: {{ bgColorLight }}; --book-color-dark: {{ bgColorDark }};">
-                
-                {# SVG Background #}
-                <div class="absolute -right-6 -bottom-6 text-slate-900/5 dark:text-white/5 transition-transform group-hover:scale-110 group-hover:-rotate-6 pointer-events-none" style="color: {{ visual ? visual.color_dark : '#000' }}; opacity: 0.15;">
-                    <svg width="128" height="128" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" class="h-32 w-32">
-                        {{ svgContent|raw }}
-                    </svg>
+    {# Main Stats #}
+    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-12">
+        {# Total Versules #}
+        <sl-card class="bg-white/80 dark:bg-slate-900/80 border-none shadow-sm backdrop-blur">
+            <div class="flex items-center gap-4">
+                <div class="p-3 bg-blue-100 dark:bg-blue-900/30 rounded-full text-blue-600 dark:text-blue-400">
+                    <sl-icon name="book" class="text-2xl"></sl-icon>
                 </div>
-
-                <a href="{{ path('app_dashboard_chapters', {id: book.id}) }}" class="block p-6 h-full relative z-10">
-                    <div class="flex justify-between items-center mb-4">
-                        <h2 class="text-xl font-bold text-slate-900 dark:text-white">{{ book.name }}</h2>
-                        <span class="text-xs font-medium text-slate-700 dark:text-slate-200 bg-white/50 dark:bg-black/20 px-2.5 py-0.5 rounded-full backdrop-blur-sm">{{ book.abbreviation }}</span>
-                    </div>
-
-                    <div class="mb-2 flex justify-between text-xs font-medium text-slate-600 dark:text-slate-400 uppercase tracking-wider">
-                        <span>Progresso</span>
-                        <span>{{ percentage }}%</span>
-                    </div>
-
-                    <div class="w-full bg-white/50 dark:bg-black/20 rounded-full h-2 mb-4 overflow-hidden">
-                        <div class="h-full rounded-full transition-all duration-500" style="width: {{ percentage }}%; background-color: {{ visual ? visual.color_dark : '#3b82f6' }}"></div>
-                    </div>
-
-                    <div class="text-xs text-slate-500 dark:text-slate-400 flex justify-between font-medium">
-                        <span>{{ book.translated }} traduzidos</span>
-                        <span>Total: {{ book.total }}</span>
-                    </div>
-                </a>
-                
-                {# Print Icon (Visible on Hover) #}
-                <div class="absolute top-4 right-4 opacity-0 group-hover:opacity-100 transition-opacity duration-200 flex gap-2 z-20">
-                    <a href="{{ path('app_bible_download_latex', {bookId: book.id}) }}" class="text-slate-500 hover:text-slate-900 dark:text-slate-400 dark:hover:text-white bg-white/90 dark:bg-slate-800/90 backdrop-blur rounded-full p-2 shadow-sm hover:shadow-md transition-all" title="Baixar LaTeX">
-                        <sl-icon name="file-earmark-code" class="text-lg"></sl-icon>
-                    </a>
-                    <a href="{{ path('app_bible_download_epub', {bookId: book.id}) }}" class="text-slate-500 hover:text-slate-900 dark:text-slate-400 dark:hover:text-white bg-white/90 dark:bg-slate-800/90 backdrop-blur rounded-full p-2 shadow-sm hover:shadow-md transition-all" title="Baixar EPUB">
-                        <sl-icon name="book" class="text-lg"></sl-icon>
-                    </a>
-                    <a href="{{ path('app_bible_print_book', {bookId: book.id}) }}" target="_blank" class="text-slate-500 hover:text-slate-900 dark:text-slate-400 dark:hover:text-white bg-white/90 dark:bg-slate-800/90 backdrop-blur rounded-full p-2 shadow-sm hover:shadow-md transition-all" title="Visualização de Impressão">
-                        <sl-icon name="printer" class="text-lg"></sl-icon>
-                    </a>
+                <div>
+                    <h3 class="text-xs font-bold text-slate-500 uppercase">Versículos</h3>
+                    <p class="text-2xl font-bold text-slate-900 dark:text-white">{{ stats.total|number_format(0, ',', '.') }}</p>
                 </div>
             </div>
-        {% endfor %}
+        </sl-card>
+
+        {# Translated #}
+        <sl-card class="bg-white/80 dark:bg-slate-900/80 border-none shadow-sm backdrop-blur">
+            <div class="flex items-center gap-4">
+                <div class="p-3 bg-emerald-100 dark:bg-emerald-900/30 rounded-full text-emerald-600 dark:text-emerald-400">
+                    <sl-icon name="translate" class="text-2xl"></sl-icon>
+                </div>
+                <div>
+                    <h3 class="text-xs font-bold text-slate-500 uppercase">Traduzidos</h3>
+                    <p class="text-2xl font-bold text-slate-900 dark:text-white">{{ stats.translated|number_format(0, ',', '.') }}</p>
+                </div>
+            </div>
+        </sl-card>
+
+        {# Progress #}
+        <sl-card class="bg-white/80 dark:bg-slate-900/80 border-none shadow-sm backdrop-blur">
+             <div class="flex items-center gap-4">
+                <div class="p-3 bg-purple-100 dark:bg-purple-900/30 rounded-full text-purple-600 dark:text-purple-400">
+                    <sl-icon name="bar-chart" class="text-2xl"></sl-icon>
+                </div>
+                <div class="flex-1">
+                    <h3 class="text-xs font-bold text-slate-500 uppercase mb-1">Progresso</h3>
+                     <div class="flex items-end justify-between">
+                         <span class="text-2xl font-bold text-slate-900 dark:text-white">{{ stats.total > 0 ? ((stats.translated / stats.total) * 100)|number_format(1) : 0 }}%</span>
+                     </div>
+                     <sl-progress-bar value="{{ stats.total > 0 ? (stats.translated / stats.total) * 100 : 0 }}" class="mt-1 h-1"></sl-progress-bar>
+                </div>
+            </div>
+        </sl-card>
+
+        {# Paratexts #}
+        <sl-card class="bg-white/80 dark:bg-slate-900/80 border-none shadow-sm backdrop-blur">
+            <div class="flex items-center gap-4">
+                <div class="p-3 bg-amber-100 dark:bg-amber-900/30 rounded-full text-amber-600 dark:text-amber-400">
+                    <sl-icon name="journal-text" class="text-2xl"></sl-icon>
+                </div>
+                <div>
+                    <h3 class="text-xs font-bold text-slate-500 uppercase">Paratextos</h3>
+                    <p class="text-2xl font-bold text-slate-900 dark:text-white">{{ paratextCount }}</p>
+                </div>
+            </div>
+        </sl-card>
+    </div>
+
+    <div class="grid grid-cols-1 lg:grid-cols-3 gap-8 mb-12">
+        {# Messages Widget #}
+        <div class="lg:col-span-1 space-y-6">
+             <sl-card class="border-none shadow-md bg-white dark:bg-slate-900">
+                <div slot="header" class="flex items-center justify-between">
+                    <span class="font-bold">Mensagens Ativas</span>
+                    {% if unansweredCount > 0 %}
+                        <sl-tag variant="danger" pill>{{ unansweredCount }} não lidas/respondidas</sl-tag>
+                    {% endif %}
+                </div>
+                <div class="max-h-[400px] overflow-y-auto space-y-2">
+                    {% for msg in messages %}
+                        <a href="{{ path('app_admin_message_index') }}?open={{ msg.id }}" class="block p-3 rounded-lg hover:bg-slate-50 dark:hover:bg-white/5 border border-slate-100 dark:border-slate-800 transition-colors">
+                            <div class="flex justify-between text-xs mb-1">
+                                <span class="font-semibold text-slate-700 dark:text-slate-300">{{ msg.sender == app.user ? 'Para: ' ~ msg.recipient.name : 'De: ' ~ msg.sender.name }}</span>
+                                <span class="text-slate-400">{{ msg.sentAt|date('d/m H:i') }}</span>
+                            </div>
+                            <p class="text-sm font-medium text-slate-800 dark:text-white truncate">{{ msg.subject }}</p>
+                            <p class="text-xs text-slate-500 truncate">{{ msg.content }}</p>
+                        </a>
+                    {% else %}
+                        <div class="text-center py-8 text-slate-400 text-sm">
+                            Nenhuma mensagem ativa.
+                        </div>
+                    {% endfor %}
+                </div>
+                 <div slot="footer" class="flex justify-center">
+                    <sl-button variant="text" size="small" href="{{ path('app_admin_message_index') }}">Ver todas</sl-button>
+                </div>
+             </sl-card>
+             
+             {# User Specific Paratexts Widgets #}
+             {% if myParatexts is not empty %}
+                 <sl-card class="border-none shadow-md bg-white dark:bg-slate-900">
+                    <div slot="header"><span class="font-bold">Seus Paratextos (Edição)</span></div>
+                    <div class="space-y-2">
+                        {% for pt in myParatexts %}
+                            <div class="flex items-center justify-between p-2 hover:bg-slate-50 border-b border-slate-50 dark:border-white/5">
+                                <div class="truncate">
+                                    <p class="text-sm font-medium">{{ pt.title }}</p>
+                                    <p class="text-xs text-slate-500">{{ pt.type|capitalize }}</p>
+                                </div>
+                                <sl-button size="small" circle href="{{ path('app_admin_paratext_edit', {id: pt.id}) }}">
+                                    <sl-icon name="pencil"></sl-icon>
+                                </sl-button>
+                            </div>
+                        {% endfor %}
+                    </div>
+                 </sl-card>
+             {% endif %}
+             
+             {% if recentParatexts is not empty %}
+                 <sl-card class="border-none shadow-md bg-white dark:bg-slate-900">
+                    <div slot="header"><span class="font-bold">Paratextos Recentes</span></div>
+                    <div class="space-y-2">
+                         {% for pt in recentParatexts %}
+                            <div class="flex items-center justify-between p-2 hover:bg-slate-50 border-b border-slate-50 dark:border-white/5">
+                                <div class="truncate">
+                                    <p class="text-sm font-medium">{{ pt.title }}</p>
+                                    <p class="text-xs text-slate-500">{{ pt.author.name }}</p>
+                                </div>
+                                <sl-button size="small" circle href="{{ path('app_admin_paratext_show', {id: pt.id}) }}">
+                                    <sl-icon name="eye"></sl-icon>
+                                </sl-button>
+                            </div>
+                        {% endfor %}
+                    </div>
+                 </sl-card>
+             {% endif %}
+        </div>
+
+        {# Books Grid (Take up 2 cols) #}
+        <div class="lg:col-span-2">
+             <h2 class="text-xl font-bold mb-4 text-slate-800 dark:text-white">Progresso dos Livros</h2>
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                {% for book in books %}
+                    {% set percentage = book.total > 0 ? (book.translated / book.total * 100)|round(1) : 0 %}
+                    
+                    {% set visual = visuals[book.id] ?? null %}
+                    {% set bgColorLight = visual ? visual.color_light : '#f8fafc' %}
+                    {% set bgColorDark = visual ? visual.color_dark : '#1e293b' %}
+                    {% set svgContent = visual ? visual.svg : '' %}
+                    
+                    <a href="{{ path('app_dashboard_chapters', {id: book.id}) }}" class="group relative rounded-xl p-4 border border-slate-200 dark:border-slate-700 bg-white/50 dark:bg-black/20 hover:shadow-md transition-all">
+                         <div class="flex justify-between items-start mb-2">
+                             <div class="flex items-center gap-2">
+                                 <span class="w-8 h-8 rounded-full flex items-center justify-center text-xs font-bold bg-white shadow-sm" style="color: {{ visual ? visual.color_dark : '#000' }}">
+                                     {{ book.abbreviation }}
+                                 </span>
+                                 <h3 class="font-bold text-slate-900 dark:text-white">{{ book.name }}</h3>
+                             </div>
+                             <span class="text-xs font-bold px-2 py-1 rounded bg-slate-100 dark:bg-white/10">{{ percentage }}%</span>
+                         </div>
+                         <div class="w-full bg-slate-100 dark:bg-white/5 rounded-full h-1.5 overflow-hidden">
+                            <div class="h-full rounded-full transition-all duration-500" style="width: {{ percentage }}%; background-color: {{ visual ? visual.color_dark : '#3b82f6' }}"></div>
+                         </div>
+                    </a>
+                {% endfor %}
+            </div>
+        </div>
     </div>
 </div>
 {% endblock %}

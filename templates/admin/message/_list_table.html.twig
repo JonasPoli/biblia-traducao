@@ -1,0 +1,84 @@
+<div class="overflow-x-auto">
+    <table class="min-w-full divide-y divide-slate-200 dark:divide-slate-700">
+        <thead class="bg-slate-50 dark:bg-slate-700/50">
+            <tr>
+                <th scope="col" class="py-3.5 pl-4 pr-3 text-left text-xs font-semibold uppercase tracking-wide text-slate-500 dark:text-slate-400 sm:pl-6">Status</th>
+                <th scope="col" class="px-3 py-3.5 text-left text-xs font-semibold uppercase tracking-wide text-slate-500 dark:text-slate-400">
+                    {% if mode == 'sent' %}Para{% elseif mode == 'received' %}De{% else %}De / Para{% endif %}
+                </th>
+                <th scope="col" class="px-3 py-3.5 text-left text-xs font-semibold uppercase tracking-wide text-slate-500 dark:text-slate-400">Assunto</th>
+                <th scope="col" class="px-3 py-3.5 text-left text-xs font-semibold uppercase tracking-wide text-slate-500 dark:text-slate-400">Data</th>
+                <th scope="col" class="px-3 py-3.5 text-left text-xs font-semibold uppercase tracking-wide text-slate-500 dark:text-slate-400">Contexto</th>
+                <th scope="col" class="relative py-3.5 pl-3 pr-4 sm:pr-6 text-right text-xs font-semibold uppercase tracking-wide text-slate-500 dark:text-slate-400">Ações</th>
+            </tr>
+        </thead>
+        <tbody class="divide-y divide-slate-200 dark:divide-slate-700 bg-white dark:bg-slate-800">
+            {% for message in messages %}
+                <tr class="group hover:bg-slate-50 dark:hover:bg-slate-700/50 transition-colors cursor-pointer" onclick="openMessageModal({{ message.id }})">
+                    <td class="whitespace-nowrap py-4 pl-4 pr-3 text-sm sm:pl-6">
+                        {% if message.status == 'unread' %}
+                            <span class="inline-flex items-center rounded-full bg-blue-50 px-2.5 py-0.5 text-xs font-medium text-blue-700 ring-1 ring-inset ring-blue-700/10">
+                                <span class="w-1.5 h-1.5 rounded-full bg-blue-600 mr-1.5"></span>
+                                Nova
+                            </span>
+                        {% elseif message.status == 'resolved' %}
+                             <span class="inline-flex items-center rounded-full bg-green-50 px-2.5 py-0.5 text-xs font-medium text-green-700 ring-1 ring-inset ring-green-600/20">
+                                <sl-icon name="check" class="text-xs mr-1"></sl-icon>
+                                Resolvida
+                             </span>
+                        {% elseif message.status == 'ignored' %}
+                             <span class="inline-flex items-center rounded-full bg-slate-50 px-2.5 py-0.5 text-xs font-medium text-slate-600 ring-1 ring-inset ring-slate-500/10">
+                                Ignorada
+                             </span>
+                        {% else %}
+                            <span class="inline-flex items-center rounded-full bg-gray-50 px-2.5 py-0.5 text-xs font-medium text-gray-600 ring-1 ring-inset ring-gray-500/10">Lida</span>
+                        {% endif %}
+                    </td>
+                    <td class="whitespace-nowrap px-3 py-4 text-sm text-slate-900 dark:text-white">
+                        <div class="flex items-center">
+                            <div class="h-8 w-8 rounded-full bg-slate-100 dark:bg-slate-700 flex items-center justify-center text-xs font-medium text-slate-500 mr-3">
+                                {% if mode == 'sent' %}
+                                    {{ message.recipient.name|first }}
+                                {% else %}
+                                    {{ message.sender.name|first }}
+                                {% endif %}
+                            </div>
+                            <div>
+                                {% if mode == 'sent' %}
+                                    <div class="font-medium">{{ message.recipient.name }}</div>
+                                {% elseif mode == 'received' %}
+                                    <div class="font-medium">{{ message.sender.name }}</div>
+                                {% else %}
+                                     <div class="font-medium">{{ message.sender.name }} <span class="text-slate-400 text-xs mx-1">&rarr;</span> {{ message.recipient.name }}</div>
+                                {% endif %}
+                            </div>
+                        </div>
+                    </td>
+                    <td class="px-3 py-4 text-sm text-slate-600 dark:text-slate-300 max-w-xs">
+                        <div class="font-medium text-slate-900 dark:text-white truncate">{{ message.subject ?: '(Sem assunto)' }}</div>
+                        <div class="text-xs text-slate-500 mt-0.5 truncate">{{ message.content }}</div>
+                    </td>
+                    <td class="whitespace-nowrap px-3 py-4 text-xs text-slate-500">
+                        {{ message.sentAt|date('d/m/Y') }}
+                        <span class="text-slate-400 block">{{ message.sentAt|date('H:i') }}</span>
+                    </td>
+                    <td class="whitespace-nowrap px-3 py-4 text-xs text-slate-500">
+                        {% if message.contextType %}
+                            <div class="inline-flex items-center rounded-md bg-slate-50 px-2 py-1 text-xs font-medium text-slate-600 ring-1 ring-inset ring-slate-500/10">
+                                {{ message.contextType|capitalize }}
+                                {% if message.contextId.id is defined %} <span class="ml-1 text-slate-400">#{{ message.contextId.id }}</span>{% endif %}
+                            </div>
+                        {% else %}
+                            <span class="text-slate-400">-</span>
+                        {% endif %}
+                    </td>
+                    <td class="relative whitespace-nowrap py-4 pl-3 pr-4 text-right text-sm font-medium sm:pr-6">
+                        <sl-button size="small" variant="default" circle class="hover:shadow-md transition-shadow" onclick="event.stopPropagation(); openMessageModal({{ message.id }})">
+                            <sl-icon name="eye" label="Ver"></sl-icon>
+                        </sl-button>
+                    </td>
+                </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</div>

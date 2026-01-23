@@ -13,7 +13,7 @@ class VerseWord
     #[ORM\Column]
     private ?int $id = null;
 
-    #[ORM\ManyToOne]
+    #[ORM\ManyToOne(inversedBy: 'verseWords')]
     #[ORM\JoinColumn(nullable: false)]
     private ?Verse $verse = null;
 

@@ -52,20 +52,43 @@
                 {% if loop.first %}
                     <div class="inline">
                         <span class="float-left text-8xl font-black leading-[0.75] mr-3 -ml-1 mt-1 font-serif text-gray-900 select-none">{{ chapter }}</span>
-                        <a href="{{ path('app_translation_verse', {bookId: book.id, chapter: chapter, verseNum: item.verse.verse}) }}" 
-                           class="font-bold text-lg align-baseline mr-1 text-[#6a5757] hover:text-blue-600 select-none transition-colors no-underline"
-                           title="Editar Versículo {{ item.verse.verse }}">
-                            {{ item.verse.verse }}
-                        </a>
+                        {% if is_granted('CAN_EDIT_TRANSLATION', app.user) %}
+                            <a href="{{ path('app_translation_verse', {bookId: book.id, chapter: chapter, verseNum: item.verse.verse}) }}" 
+                               class="font-bold text-lg align-baseline mr-1 text-[#6a5757] hover:text-blue-600 select-none transition-colors no-underline"
+                               title="Editar Versículo {{ item.verse.verse }}">
+                                {{ item.verse.verse }}
+                            </a>
+                        {% else %}
+                             <span class="font-bold text-lg align-baseline mr-1 text-[#6a5757] select-none cursor-default">
+                                {{ item.verse.verse }}
+                            </span>
+                             {# If Reviewer, maybe add a small comment icon? For now just text. #}
+                             {% if is_granted('CAN_COMMENT_TRANSLATION', app.user) %}
+                                 <a href="{{ path('app_translation_verse', {bookId: book.id, chapter: chapter, verseNum: item.verse.verse}) }}" class="text-xs text-blue-500 hover:underline" title="Comentar">
+                                    <sl-icon name="chat"></sl-icon>
+                                 </a>
+                             {% endif %}
+                        {% endif %}
                         {{ item.processed_text|raw }}
                     </div>
                 {% else %}
                     <span class="inline-block hover:bg-yellow-50/50 transition-colors rounded decoration-clone px-0.5 -mx-0.5">
-                        <a href="{{ path('app_translation_verse', {bookId: book.id, chapter: chapter, verseNum: item.verse.verse}) }}" 
-                           class="font-bold text-lg align-baseline mr-1 text-[#6a5757] hover:text-blue-600 select-none transition-colors no-underline"
-                           title="Editar Versículo {{ item.verse.verse }}">
-                            {{ item.verse.verse }}
-                        </a>
+                        {% if is_granted('CAN_EDIT_TRANSLATION', app.user) %}
+                            <a href="{{ path('app_translation_verse', {bookId: book.id, chapter: chapter, verseNum: item.verse.verse}) }}" 
+                               class="font-bold text-lg align-baseline mr-1 text-[#6a5757] hover:text-blue-600 select-none transition-colors no-underline"
+                               title="Editar Versículo {{ item.verse.verse }}">
+                                {{ item.verse.verse }}
+                            </a>
+                        {% else %}
+                            <span class="font-bold text-lg align-baseline mr-1 text-[#6a5757] select-none cursor-default">
+                                {{ item.verse.verse }}
+                            </span>
+                            {% if is_granted('CAN_COMMENT_TRANSLATION', app.user) %}
+                                 <a href="{{ path('app_translation_verse', {bookId: book.id, chapter: chapter, verseNum: item.verse.verse}) }}" class="text-xs text-blue-500 hover:underline" title="Comentar">
+                                    <sl-icon name="chat"></sl-icon>
+                                 </a>
+                             {% endif %}
+                        {% endif %}
                         {{ item.processed_text|raw }}
                     </span>
                 {% endif %}

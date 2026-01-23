@@ -19,6 +19,15 @@ class User implements UserInterface, PasswordAuthenticatedUserInterface
     #[ORM\Column(length: 180)]
     private ?string $username = null;
 
+    #[ORM\Column(length: 255)]
+    private ?string $name = null;
+
+    #[ORM\Column(length: 255, unique: true)]
+    private ?string $email = null;
+
+    #[ORM\Column(type: 'integer', options: ['default' => 0])]
+    private int $workGroup = 0;
+
     /**
      * @var list<string> The user roles
      */
@@ -48,6 +57,42 @@ class User implements UserInterface, PasswordAuthenticatedUserInterface
         return $this;
     }
 
+    public function getName(): ?string
+    {
+        return $this->name;
+    }
+
+    public function setName(string $name): static
+    {
+        $this->name = $name;
+
+        return $this;
+    }
+
+    public function getEmail(): ?string
+    {
+        return $this->email;
+    }
+
+    public function setEmail(string $email): static
+    {
+        $this->email = $email;
+
+        return $this;
+    }
+
+    public function getWorkGroup(): int
+    {
+        return $this->workGroup;
+    }
+
+    public function setWorkGroup(int $workGroup): static
+    {
+        $this->workGroup = $workGroup;
+
+        return $this;
+    }
+
     /**
      * A visual identifier that represents this user.
      *
@@ -68,6 +113,10 @@ class User implements UserInterface, PasswordAuthenticatedUserInterface
         // guarantee every user at least has ROLE_USER
         $roles[] = 'ROLE_USER';
 
+        if ($this->workGroup === 0) {
+            $roles[] = 'ROLE_ADMIN';
+        }
+
         return array_unique($roles);
     }
 
@@ -84,7 +133,7 @@ class User implements UserInterface, PasswordAuthenticatedUserInterface
     /**
      * @see PasswordAuthenticatedUserInterface
      */
-    public function getPassword(): string
+    public function getPassword(): ?string
     {
         return $this->password;
     }

@@ -1,0 +1,20 @@
+{% extends 'admin/base.html.twig' %}
+
+{% block title %}Editar Paratexto{% endblock %}
+
+{% block body %}
+    <sl-card class="max-w-4xl mx-auto border-none bg-white/85 shadow-lg shadow-slate-900/5 ring-1 ring-white/70 backdrop-blur dark:bg-slate-900/70 dark:ring-white/10">
+        <div slot="header" class="flex items-center justify-between">
+            <h1 class="text-xl font-semibold text-slate-900 dark:text-white">Editar Conteúdo #{{ paratext.id }}</h1>
+            <form method="post" action="{{ path('app_admin_paratext_delete', {'id': paratext.id}) }}" onsubmit="return confirm('Tem certeza que deseja excluir este item?');">
+                <input type="hidden" name="_token" value="{{ csrf_token('delete' ~ paratext.id) }}">
+                <sl-button variant="danger" outline type="submit" size="small">
+                    <sl-icon slot="prefix" name="trash"></sl-icon>
+                    Excluir
+                </sl-button>
+            </form>
+        </div>
+
+        {% include 'admin/paratext/_form.html.twig' with {'button_label': 'Atualizar'} %}
+    </sl-card>
+{% endblock %}
