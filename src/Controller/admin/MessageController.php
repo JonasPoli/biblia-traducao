@@ -41,19 +41,14 @@ class MessageController extends AbstractController
             throw $this->createAccessDeniedException();
         }
 
-        // Fetch threads (Root messages)
-        $receivedMessages = $messageRepository->findInboxThreads($user);
-        $sentMessages = $messageRepository->findSentThreads($user);
-
-        $allMessages = [];
         if ((int) $user->getWorkGroup() === 0) { // Admin
-            $allMessages = $messageRepository->findAllThreads();
+            $conversations = $messageRepository->findAllConversations();
+        } else {
+            $conversations = $messageRepository->findConversations($user);
         }
 
         return $this->render('admin/message/index.html.twig', [
-            'receivedMessages' => $receivedMessages,
-            'sentMessages' => $sentMessages,
-            'allMessages' => $allMessages,
+            'conversations' => $conversations,
             'isAdmin' => (int) $user->getWorkGroup() === 0,
         ]);
     }

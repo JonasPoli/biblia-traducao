@@ -1,4 +1,4 @@
-<div class="p-0 flex flex-col h-[80vh] max-h-[800px]">
+<div class="p-0 flex flex-col h-[80vh] max-h-[800px] w-full">
     <!-- Header -->
     <div class="flex items-center justify-between border-b border-slate-100 p-4 shrink-0 bg-white rounded-t-xl">
         <div>
@@ -12,7 +12,7 @@
                 <span>Iniciado em {{ rootMessage.sentAt|date('d/m/Y') }}</span>
             </div>
         </div>
-        <button type="button" onclick="document.getElementById('message-modal').close()" class="text-slate-400 hover:text-slate-600 p-2 rounded-full hover:bg-slate-100 transition-colors">
+        <button type="button" onclick="document.getElementById('message-modal').close()" class="text-slate-500 bg-slate-100 hover:bg-slate-200 hover:text-slate-800 p-2.5 rounded-full transition-colors">
             <sl-icon name="x-lg" label="Fechar"></sl-icon>
         </button>
     </div>
@@ -60,11 +60,3 @@
         </form>
     </div>
 </div>
-
-<script>
-    // Scroll to bottom
-    setTimeout(() => {
-        const container = document.getElementById('conversation-container');
-        if(container) container.scrollTop = container.scrollHeight;
-    }, 100);
-</script>

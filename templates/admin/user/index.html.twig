@@ -37,46 +37,55 @@
 {% endblock %}
 
 {% block body %}
- <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-10 space-y-8">
-    <div class="sm:flex sm:items-center sm:justify-between">
-        <div>
-            <h1 class="text-3xl font-bold tracking-tight text-slate-900 dark:text-white">Gerenciamento de Usuários</h1>
-            <p class="mt-2 text-sm text-slate-500 dark:text-slate-400">Uma lista de todos os usuários incluindo nome, título, email e permissões.</p>
-        </div>
-        <div class="mt-4 sm:ml-16 sm:mt-0 sm:flex-none">
-            <a href="{{ path('app_admin_user_new') }}">
-                <sl-button variant="primary" size="medium" class="shadow-sm">
+<div class="space-y-8">
+    <section class="rounded-[32px] bg-white/80 p-6 shadow-xl shadow-slate-900/5 ring-1 ring-white/70 backdrop-blur dark:bg-slate-900/70 dark:ring-white/10">
+        <div class="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
+            <div>
+                <p class="text-xs font-semibold uppercase tracking-[0.35em] text-slate-500 dark:text-slate-400">Administração</p>
+                <h1 class="mt-2 text-3xl font-semibold text-slate-900 dark:text-white">Gerenciamento de Usuários</h1>
+                <p class="mt-2 max-w-2xl text-sm text-slate-500 dark:text-slate-400">
+                    Uma lista de todos os usuários incluindo nome, título, email e permissões.
+                </p>
+            </div>
+            <div class="flex flex-wrap gap-3">
+                <sl-button size="large" variant="default" outline href="{{ path('app_admin_user_new') }}">
                     <sl-icon slot="prefix" name="person-plus"></sl-icon>
                     Adicionar Usuário
                 </sl-button>
-            </a>
-        </div>
-    </div>
-
-    <div class="bg-white dark:bg-slate-800 rounded-xl shadow-lg ring-1 ring-slate-900/5 overflow-hidden">
-        {% if users is empty %}
-            <div class="p-12 text-center text-slate-500 dark:text-slate-400">
-                <div class="inline-flex items-center justify-center w-16 h-16 rounded-full bg-slate-100 dark:bg-slate-700 mb-4">
-                    <sl-icon name="inbox" class="text-3xl text-slate-400"></sl-icon>
-                </div>
-                <h3 class="text-lg font-medium text-slate-900 dark:text-white">Nenhum usuário encontrado</h3>
-                <p class="mt-1 text-sm text-slate-500">Comece criando um novo usuário.</p>
             </div>
+        </div>
+    </section>
+
+    <sl-card class="border-none bg-white/85 shadow-lg shadow-slate-900/5 ring-1 ring-white/70 backdrop-blur dark:bg-slate-900/70 dark:ring-white/10">
+        <div slot="header" class="flex flex-wrap items-center justify-between gap-4">
+            <div>
+                <p class="text-lg font-semibold text-slate-900 dark:text-white">Lista de Usuários</p>
+                <p class="text-sm text-slate-500 dark:text-slate-400">
+                    Gerencie o acesso e as funções dos membros da equipe.
+                </p>
+            </div>
+        </div>
+
+        {% if users is empty %}
+            <sl-alert variant="neutral" open>
+                <sl-icon slot="icon" name="inbox"></sl-icon>
+                Nenhum usuário encontrado. Comece criando um novo usuário.
+            </sl-alert>
         {% else %}
             <div class="overflow-x-auto">
-                <table id="user-table" class="min-w-full divide-y divide-slate-200 dark:divide-slate-700">
-                    <thead class="bg-slate-50 dark:bg-slate-700/50">
-                        <tr>
-                            <th scope="col" class="py-3.5 pl-4 pr-3 text-left text-xs font-semibold uppercase tracking-wide text-slate-500 dark:text-slate-400 sm:pl-6">ID</th>
-                            <th scope="col" class="px-3 py-3.5 text-left text-xs font-semibold uppercase tracking-wide text-slate-500 dark:text-slate-400">Usuário</th>
-                            <th scope="col" class="px-3 py-3.5 text-left text-xs font-semibold uppercase tracking-wide text-slate-500 dark:text-slate-400">Grupo</th>
-                            <th scope="col" class="px-3 py-3.5 text-left text-xs font-semibold uppercase tracking-wide text-slate-500 dark:text-slate-400">Username</th>
-                            <th scope="col" class="relative py-3.5 pl-3 pr-4 sm:pr-6 text-right text-xs font-semibold uppercase tracking-wide text-slate-500 dark:text-slate-400">Ações</th>
+                <table id="user-table" class="min-w-full divide-y divide-slate-100 dark:divide-white/5">
+                    <thead class="bg-slate-50/50 dark:bg-slate-700/20">
+                        <tr class="text-left text-xs uppercase tracking-wide text-slate-500 dark:text-slate-400">
+                            <th scope="col" class="py-3.5 pl-4 pr-3 sm:pl-6">ID</th>
+                            <th scope="col" class="px-3 py-3.5">Usuário</th>
+                            <th scope="col" class="px-3 py-3.5">Grupo</th>
+                            <th scope="col" class="px-3 py-3.5">Username</th>
+                            <th scope="col" class="relative py-3.5 pl-3 pr-4 sm:pr-6 text-right">Ações</th>
                         </tr>
                     </thead>
-                    <tbody class="divide-y divide-slate-200 dark:divide-slate-700 bg-white dark:bg-slate-800">
+                    <tbody class="divide-y divide-slate-100 dark:divide-white/5">
                         {% for user in users %}
-                            <tr class="group hover:bg-slate-50 dark:hover:bg-slate-700/50 transition-colors">
+                            <tr class="group hover:bg-slate-50/70 dark:hover:bg-white/5 transition-colors">
                                 <td class="whitespace-nowrap py-4 pl-4 pr-3 text-sm font-mono text-slate-500 dark:text-slate-400 sm:pl-6">#{{ user.id }}</td>
                                 <td class="whitespace-nowrap px-3 py-4 text-sm">
                                     <div class="font-medium text-slate-900 dark:text-white">{{ user.name }}</div>
@@ -116,6 +125,6 @@
                 </table>
             </div>
         {% endif %}
-    </div>
+    </sl-card>
  </div>
 {% endblock %}

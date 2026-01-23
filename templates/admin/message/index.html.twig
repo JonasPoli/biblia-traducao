@@ -116,11 +116,27 @@
                 .then(res => res.text())
                 .then(html => {
                     content.innerHTML = html;
+                    // Auto-scroll to bottom of conversation
+                    setTimeout(() => {
+                        const container = document.getElementById('conversation-container');
+                        if (container) {
+                            container.scrollTop = container.scrollHeight;
+                        }
+                    }, 50);
                 })
                 .catch(err => {
                     content.innerHTML = '<div class="p-6 text-red-500">Erro ao carregar mensagem.</div>';
                 });
         }
+
+        // Auto-open modal if 'open' param is present
+        document.addEventListener('DOMContentLoaded', () => {
+            const urlParams = new URLSearchParams(window.location.search);
+            const openId = urlParams.get('open');
+            if (openId) {
+                openMessageModal(openId);
+            }
+        });
     </script>
  </div>
 {% endblock %}
