@@ -589,6 +589,7 @@ final class TranslationController extends AbstractController
                     'wordOriginal' => trim($match['original']),
                     'translation' => $translation,
                     'strongCode' => $strongCode,
+                    'ogntSort' => null,
                     'portugueseType' => $strongTypeMap[$strongCode] ?? '',
                     'transliteration' => $definition ? $definition->getTransliteration() : '',
                     'fullDefinition' => $definition ? $definition->getFullDefinition() : '',

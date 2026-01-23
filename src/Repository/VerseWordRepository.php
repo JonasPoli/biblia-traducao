@@ -32,4 +32,25 @@ class VerseWordRepository extends ServiceEntityRepository
             ->getQuery()
             ->getResult();
     }
+
+    /**
+     * Find all words in a specific verse by book ID, chapter, and verse number
+     * 
+     * @return VerseWord[]
+     */
+    public function findByBookChapterVerse(int $bookId, int $chapter, int $verse): array
+    {
+        return $this->createQueryBuilder('vw')
+            ->join('vw.verse', 'v')
+            ->join('v.book', 'b')
+            ->where('b.id = :bookId')
+            ->andWhere('v.chapter = :chapter')
+            ->andWhere('v.verse = :verse')
+            ->setParameter('bookId', $bookId)
+            ->setParameter('chapter', $chapter)
+            ->setParameter('verse', $verse)
+            ->orderBy('vw.position', 'ASC')
+            ->getQuery()
+            ->getResult();
+    }
 }

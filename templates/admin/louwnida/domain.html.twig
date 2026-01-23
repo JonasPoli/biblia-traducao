@@ -1,0 +1,84 @@
+{% extends 'admin/base.html.twig' %}
+
+{% block title %}LN-{{ domainNumber }} - {{ domainCategory ?? 'Domínio Semântico' }}{% endblock %}
+
+{% block body %}
+<div class="mx-auto max-w-7xl px-6 py-8 lg:px-8">
+    {# Header #}
+    <div class="mb-8">
+        <nav class="text-sm text-slate-500 mb-4">
+            <a href="{{ path('pub_home') }}" class="hover:text-primary">Início</a>
+            <span class="mx-2">›</span>
+            <span class="text-slate-700 dark:text-slate-300">Louw-Nida</span>
+        </nav>
+        
+        <div class="flex items-center gap-4 mb-4">
+            <span class="bg-purple-100 text-purple-800 text-lg font-bold px-4 py-2 rounded-lg dark:bg-purple-900/50 dark:text-purple-300">
+                LN-{{ domainNumber }}
+            </span>
+        </div>
+        
+        <h1 class="text-4xl font-bold text-slate-900 dark:text-white mb-2">
+            {{ domainCategory ?? 'Domínio ' ~ ' - LN ' ~domainNumber }}
+        </h1>
+        <p class="text-lg text-slate-600 dark:text-slate-400">
+            {{ subdomains|length }} subdomínio{{ subdomains|length != 1 ? 's' : '' }}
+        </p>
+    </div>
+
+    {# Subdomains Grid #}
+    <div class="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
+        {% for subdomain in subdomains %}
+            <a href="{{ path('admin_louwnida', {word: 'LN-' ~ domainNumber ~ '.' ~ subdomain.subdomainNumber}) }}" 
+               class="group block bg-white dark:bg-slate-900 rounded-xl border border-slate-200 dark:border-slate-800 p-5 hover:border-purple-400 dark:hover:border-purple-600 hover:shadow-lg transition-all">
+                
+                {# Code Badge #}
+                <div class="flex items-center gap-3 mb-3">
+                    <span class="bg-indigo-100 text-indigo-800 text-sm font-semibold px-2.5 py-1 rounded dark:bg-indigo-900/50 dark:text-indigo-300">
+                        LN-{{ domainNumber }}.{{ subdomain.subdomainNumber }}
+                    </span>
+                </div>
+                
+                {# Gloss #}
+                <h3 class="text-lg font-semibold text-slate-900 dark:text-white mb-2 group-hover:text-purple-700 dark:group-hover:text-purple-400 transition-colors">
+                    {{ subdomain.glossPortuguese ?? subdomain.glossEnglish ?? 'Subdomínio ' ~ ' - LN ' ~ domainNumber ~ '.' ~ subdomain.subdomainNumber }}
+                </h3>
+                
+                {% if subdomain.glossEnglish and subdomain.glossPortuguese %}
+                    <p class="text-sm text-slate-500 dark:text-slate-400 italic mb-3">
+                        {{ subdomain.glossEnglish }}
+                    </p>
+                {% endif %}
+                
+                {# Senses Preview #}
+                {% if subdomainSenses[subdomain.subdomainNumber] is defined and subdomainSenses[subdomain.subdomainNumber]|length > 0 %}
+                    <div class="space-y-2 mt-3 pt-3 border-t border-slate-100 dark:border-slate-800">
+                        {% for sense in subdomainSenses[subdomain.subdomainNumber]|slice(0, 2) %}
+                            {% if sense.ideiaCentralPtBr %}
+                                <div class="text-sm">
+                                    <span class="text-xs font-medium text-green-700 dark:text-green-400">{{ sense.strongCode }}:</span>
+                                    <span class="text-slate-600 dark:text-slate-400">{{ sense.ideiaCentralPtBr|slice(0, 60) }}{% if sense.ideiaCentralPtBr|length > 60 %}...{% endif %}</span>
+                                </div>
+                            {% endif %}
+                        {% endfor %}
+                        {% if subdomainSenses[subdomain.subdomainNumber]|length > 2 %}
+                            <p class="text-xs text-slate-400">+{{ subdomainSenses[subdomain.subdomainNumber]|length - 2 }} mais...</p>
+                        {% endif %}
+                    </div>
+                {% endif %}
+
+                {# Arrow Icon #}
+                <div class="mt-4 flex justify-end">
+                    <span class="text-slate-400 group-hover:text-purple-600 dark:group-hover:text-purple-400 transition-colors">
+                        →
+                    </span>
+                </div>
+            </a>
+        {% else %}
+            <div class="col-span-full text-center py-12 text-slate-500">
+                <p class="text-lg">Nenhum subdomínio encontrado para este domínio.</p>
+            </div>
+        {% endfor %}
+    </div>
+</div>
+{% endblock %}

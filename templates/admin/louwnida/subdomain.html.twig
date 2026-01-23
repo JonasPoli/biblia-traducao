@@ -1,0 +1,197 @@
+{% extends 'admin/base.html.twig' %}
+
+{% block title %}{{ lnNumber }} - {{ subdomain.glossPortuguese ?? subdomain.glossEnglish ?? 'Subdomínio' }}{% endblock %}
+
+{% block body %}
+<div class="mx-auto max-w-7xl px-6 py-8 lg:px-8">
+    {# Header #}
+    <div class="mb-8">
+        <nav class="text-sm text-slate-500 mb-4">
+            <a href="{{ path('pub_home') }}" class="hover:text-primary">Início</a>
+            <span class="mx-2">›</span>
+            <a href="{{ path('admin_louwnida', {word: 'LN-' ~ domainNumber}) }}" class="hover:text-primary">
+                LN-{{ domainNumber }}
+            </a>
+            <span class="mx-2">›</span>
+            <span class="text-slate-700 dark:text-slate-300">{{ lnNumber }}</span>
+        </nav>
+        
+        {# Domain Info #}
+        <div class="bg-slate-50 dark:bg-slate-900 rounded-lg p-4 mb-6 border border-slate-200 dark:border-slate-800">
+            <div class="flex items-center gap-3">
+                <a href="{{ path('admin_louwnida', {word: 'LN-' ~ domainNumber}) }}" 
+                   class="bg-purple-100 text-purple-800 text-sm font-semibold px-3 py-1.5 rounded hover:bg-purple-200 transition-colors dark:bg-purple-900/50 dark:text-purple-300">
+                    LN-{{ domainNumber }}
+                </a>
+                <span class="text-slate-700 dark:text-slate-300 font-medium">{{ domainCategory }}</span>
+            </div>
+        </div>
+        
+        {# Subdomain Header #}
+        <div class="flex items-center gap-4 mb-4">
+            <span class="bg-indigo-100 text-indigo-800 text-xl font-bold px-4 py-2 rounded-lg dark:bg-indigo-900/50 dark:text-indigo-300">
+                {{ lnNumber }}
+            </span>
+        </div>
+        
+        <h1 class="text-3xl font-bold text-slate-900 dark:text-white mb-2">
+            {{ subdomain.glossPortuguese ?? subdomain.glossEnglish ?? 'Subdomínio ' ~ ' - LN ' ~ domainNumber ~ '.' ~ subdomainNumber }}
+        </h1>
+        
+        {% if subdomain.glossEnglish and subdomain.glossPortuguese %}
+            <p class="text-lg text-slate-500 dark:text-slate-400 italic">
+                {{ subdomain.glossEnglish }}
+            </p>
+        {% endif %}
+    </div>
+
+    {# Senses Section #}
+    {% if senses|length > 0 %}
+    <div class="mb-10">
+        <h2 class="text-xl font-bold text-slate-900 dark:text-white mb-4">Sentidos Semânticos</h2>
+        <div class="space-y-4">
+            {% for sense in senses %}
+                <div class="bg-white dark:bg-slate-900 rounded-lg border border-slate-200 dark:border-slate-800 p-5">
+                    <div class="flex items-center gap-3 mb-3">
+                        <span class="bg-blue-100 text-blue-800 text-sm font-semibold px-2.5 py-1 rounded dark:bg-blue-900/50 dark:text-blue-300">
+                            {{ sense.strongCode }}
+                        </span>
+                    </div>
+                    
+                    {% if sense.ideiaCentralPtBr %}
+                        <div class="mb-3">
+                            <h4 class="text-xs font-semibold text-green-700 dark:text-green-400 uppercase mb-1">Ideia Central</h4>
+                            <p class="text-slate-800 dark:text-slate-200">{{ sense.ideiaCentralPtBr }}</p>
+                        </div>
+                    {% endif %}
+                    
+                    {% if sense.sentidoSemanticoPtBr %}
+                        <div>
+                            <h4 class="text-xs font-semibold text-blue-700 dark:text-blue-400 uppercase mb-1">Sentido Semântico</h4>
+                            <p class="text-slate-700 dark:text-slate-300">{{ sense.sentidoSemanticoPtBr }}</p>
+                        </div>
+                    {% endif %}
+                </div>
+            {% endfor %}
+        </div>
+    </div>
+    {% endif %}
+
+    {# Bible Occurrences Section #}
+    <div>
+        <h2 class="text-xl font-bold text-slate-900 dark:text-white mb-4">
+            Ocorrências na Bíblia 
+            <span class="text-base font-normal text-slate-500">({{ versesData|length }} versículo{{ versesData|length != 1 ? 's' : '' }})</span>
+        </h2>
+        
+        <div class="space-y-6">
+            {% for verseData in versesData %}
+                <div class="bg-white dark:bg-slate-900 rounded-lg border border-slate-200 dark:border-slate-800 overflow-hidden">
+                    {# Verse Header #}
+                    <div class="bg-slate-50 dark:bg-slate-800 px-5 py-3 border-b border-slate-200 dark:border-slate-700">
+                        <a href="{{ path('app_translation_verse', {bookId: verseData.book, chapter: verseData.chapter, verseNum: verseData.verse}) }}" 
+                           class="font-semibold text-slate-900 dark:text-white hover:text-purple-700 dark:hover:text-purple-400">
+                            {{ verseData.bookName }} {{ verseData.chapter }}:{{ verseData.verse }}
+                        </a>
+                    </div>
+                    
+                    <div class="p-5 space-y-4">
+                        {# Greek #}
+                        <div>
+                            <h4 class="text-xs font-semibold text-slate-500 uppercase mb-2">Grego</h4>
+                            <p class="font-serif text-lg leading-relaxed" dir="ltr">
+                                {% for word in verseData.greekWords %}
+                                    {% if word.isMatch %}
+                                        <span class="font-bold text-purple-800 dark:text-purple-300 bg-purple-100 dark:bg-purple-900/40 px-1.5 py-0.5 rounded border-2 border-purple-400 dark:border-purple-600">{{ word.text }}</span>
+                                    {% else %}
+                                        <span>{{ word.text }}</span>
+                                    {% endif %}
+                                {% endfor %}
+                            </p>
+                        </div>
+                        
+                        {# English #}
+                        <div>
+                            <h4 class="text-xs font-semibold text-slate-500 uppercase mb-2">Inglês</h4>
+                            <p class="text-base leading-relaxed text-slate-700 dark:text-slate-300">
+                                {% for word in verseData.englishWords %}
+                                    {% if word.isMatch %}
+                                        <span class="font-bold text-purple-800 dark:text-purple-300 bg-purple-100 dark:bg-purple-900/40 px-1 py-0.5 rounded border-2 border-purple-400 dark:border-purple-600">{{ word.text }}</span>
+                                    {% else %}
+                                        <span>{{ word.text }}</span>
+                                    {% endif %}
+                                {% endfor %}
+                            </p>
+                        </div>
+                        
+                        {# Spanish #}
+                        <div>
+                            <h4 class="text-xs font-semibold text-slate-500 uppercase mb-2">Espanhol</h4>
+                            <p class="text-base leading-relaxed text-slate-700 dark:text-slate-300">
+                                {% for word in verseData.spanishWords %}
+                                    {% if word.isMatch %}
+                                        <span class="font-bold text-purple-800 dark:text-purple-300 bg-purple-100 dark:bg-purple-900/40 px-1 py-0.5 rounded border-2 border-purple-400 dark:border-purple-600">{{ word.text }}</span>
+                                    {% else %}
+                                        <span>{{ word.text }}</span>
+                                    {% endif %}
+                                {% endfor %}
+                            </p>
+                        </div>
+                        
+                        {# Portuguese #}
+                        <div>
+                            <h4 class="text-xs font-semibold text-slate-500 uppercase mb-2">Português</h4>
+                            <p class="text-base leading-relaxed text-slate-700 dark:text-slate-300">
+                                {% for word in verseData.portugueseWords %}
+                                    {% if word.isMatch %}
+                                        <span class="font-bold text-purple-800 dark:text-purple-300 bg-purple-100 dark:bg-purple-900/40 px-1 py-0.5 rounded border-2 border-purple-400 dark:border-purple-600">{{ word.text }}</span>
+                                    {% else %}
+                                        <span>{{ word.text }}</span>
+                                    {% endif %}
+                                {% endfor %}
+                            </p>
+                            {% if verseData.almeidaText %}
+                                <p class="text-sm italic text-slate-500 dark:text-slate-400 mt-2">
+                                    {{ verseData.almeidaText }}
+                                </p>
+                            {% endif %}
+                        </div>
+                        
+                        {# Matching Senses #}
+                        {% if verseData.matchingSenses|length > 0 %}
+                            <div class="mt-4 pt-4 border-t border-slate-200 dark:border-slate-700">
+                                <h4 class="text-xs font-semibold text-slate-500 uppercase mb-3">Sentido Semântico Neste Versículo</h4>
+                                <div class="space-y-3">
+                                    {% for sn, sense in verseData.matchingSenses %}
+                                        <div class="bg-slate-50 dark:bg-slate-800 rounded-lg p-4">
+                                            <div class="flex items-center gap-2 mb-2">
+                                                <span class="bg-blue-100 text-blue-800 text-xs font-semibold px-2 py-0.5 rounded dark:bg-blue-900/50 dark:text-blue-300">
+                                                    {{ sn }}
+                                                </span>
+                                            </div>
+                                            {% if sense.ideiaCentralPtBr %}
+                                                <p class="text-sm text-green-700 dark:text-green-400 mb-1">
+                                                    <strong>Ideia:</strong> {{ sense.ideiaCentralPtBr }}
+                                                </p>
+                                            {% endif %}
+                                            {% if sense.sentidoSemanticoPtBr %}
+                                                <p class="text-sm text-slate-600 dark:text-slate-400">
+                                                    {{ sense.sentidoSemanticoPtBr }}
+                                                </p>
+                                            {% endif %}
+                                        </div>
+                                    {% endfor %}
+                                </div>
+                            </div>
+                        {% endif %}
+                    </div>
+                </div>
+            {% else %}
+                <div class="text-center py-12 text-slate-500 bg-white dark:bg-slate-900 rounded-lg border border-slate-200 dark:border-slate-800">
+                    <p class="text-lg">Nenhuma ocorrência encontrada para este subdomínio.</p>
+                </div>
+            {% endfor %}
+        </div>
+    </div>
+</div>
+{% endblock %}
