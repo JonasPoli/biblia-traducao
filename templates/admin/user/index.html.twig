@@ -88,8 +88,21 @@
                             <tr class="group hover:bg-slate-50/70 dark:hover:bg-white/5 transition-colors">
                                 <td class="whitespace-nowrap py-4 pl-4 pr-3 text-sm font-mono text-slate-500 dark:text-slate-400 sm:pl-6">#{{ user.id }}</td>
                                 <td class="whitespace-nowrap px-3 py-4 text-sm">
-                                    <div class="font-medium text-slate-900 dark:text-white">{{ user.name }}</div>
-                                    <div class="text-slate-500 dark:text-slate-400">{{ user.email }}</div>
+                                    <div class="flex items-center">
+                                        <div class="h-10 w-10 flex-shrink-0">
+                                            {% if user.image %}
+                                                <img class="h-10 w-10 rounded-full object-cover" src="{{ asset('uploads/avatars/' ~ user.image) }}" alt="">
+                                            {% else %}
+                                                <div class="flex h-10 w-10 items-center justify-center rounded-full bg-slate-100 text-slate-500 dark:bg-slate-800 dark:text-slate-400">
+                                                    <sl-icon name="person" class="text-xl"></sl-icon>
+                                                </div>
+                                            {% endif %}
+                                        </div>
+                                        <div class="ml-4">
+                                            <div class="font-medium text-slate-900 dark:text-white">{{ user.name }}</div>
+                                            <div class="text-slate-500 dark:text-slate-400">{{ user.email }}</div>
+                                        </div>
+                                    </div>
                                 </td>
                                 <td class="whitespace-nowrap px-3 py-4 text-sm">
                                     {% if user.workGroup == 0 %}<span class="inline-flex items-center rounded-full bg-red-50 px-2.5 py-0.5 text-xs font-medium text-red-700 ring-1 ring-inset ring-red-600/10">Admin</span>

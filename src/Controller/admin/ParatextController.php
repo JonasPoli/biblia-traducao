@@ -11,7 +11,10 @@ use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\Routing\Attribute\Route;
+
 use Symfony\Component\Security\Http\Attribute\IsGranted;
+use Symfony\Component\String\Slugger\SluggerInterface;
+use Symfony\Component\HttpFoundation\File\Exception\FileException;
 
 #[Route('/admin/paratext')]
 #[IsGranted('ROLE_USER')]
@@ -27,7 +30,7 @@ class ParatextController extends AbstractController
 
     #[Route('/new', name: 'app_admin_paratext_new', methods: ['GET', 'POST'])]
     #[IsGranted('CAN_EDIT_PARATEXT')]
-    public function new(Request $request, EntityManagerInterface $entityManager, BookRepository $bookRepository): Response
+    public function new(Request $request, EntityManagerInterface $entityManager, BookRepository $bookRepository, SluggerInterface $slugger, \App\Repository\VerseRepository $verseRepository): Response
     {
         $paratext = new Paratext();
 
@@ -36,6 +39,7 @@ class ParatextController extends AbstractController
         $type = $request->request->get('type');
         $bookId = $request->request->get('book_id');
         $chapter = $request->request->get('chapter');
+        $verse = $request->request->get('verse');
 
         if ($request->isMethod('POST')) {
             if (!$title || !$type) {
@@ -51,10 +55,31 @@ class ParatextController extends AbstractController
                 if ($chapter) {
                     $paratext->setChapter((int) $chapter);
                 }
+                if ($verse) {
+                    $paratext->setVerse((int) $verse);
+                }
 
                 $user = $this->getUser();
                 if ($user instanceof User) {
                     $paratext->setAuthor($user);
+                }
+
+                // Image Upload
+                $imageFile = $request->files->get('image');
+                if ($imageFile) {
+                    $originalFilename = pathinfo($imageFile->getClientOriginalName(), PATHINFO_FILENAME);
+                    $safeFilename = $slugger->slug($originalFilename);
+                    $newFilename = $safeFilename . '-' . uniqid() . '.' . $imageFile->guessExtension();
+
+                    try {
+                        $imageFile->move(
+                            $this->getParameter('kernel.project_dir') . '/public/uploads/paratext',
+                            $newFilename
+                        );
+                        $paratext->setImage($newFilename);
+                    } catch (FileException $e) {
+                        $this->addFlash('error', 'Erro ao fazer upload da imagem.');
+                    }
                 }
 
                 $entityManager->persist($paratext);
@@ -63,10 +88,30 @@ class ParatextController extends AbstractController
                 return $this->redirectToRoute('app_admin_paratext_index', [], Response::HTTP_SEE_OTHER);
             }
         }
+        
+        // Fetch Bible Structure for JS
+        $structure = [];
+        // Simplified structure: [book_id => max_chapters]
+        // Actually user needs max_verses per chapter. 
+        // This query might be heavy if not careful.
+        // Let's optimize: fetch all verses counts grouped by book and chapter.
+        
+        $conn = $entityManager->getConnection();
+        // SQLite/MySQL compatible
+        $sql = 'SELECT book_id, chapter, MAX(verse) as max_verse FROM verse GROUP BY book_id, chapter';
+        $rows = $conn->fetchAllAssociative($sql);
+        
+        $bibleStructure = [];
+        foreach ($rows as $row) {
+             $bibleStructure[$row['book_id']]['chapters'][$row['chapter']] = $row['max_verse'];
+        }
+        
+        // Also need max chapters per book? We can deduce it from the keys of chapters.
 
         return $this->render('admin/paratext/new.html.twig', [
             'paratext' => $paratext,
             'books' => $bookRepository->findBy([], ['bookOrder' => 'ASC']),
+            'bibleStructure' => $bibleStructure,
         ]);
     }
 
@@ -104,7 +149,9 @@ class ParatextController extends AbstractController
 
     #[Route('/{id}/edit', name: 'app_admin_paratext_edit', methods: ['GET', 'POST'])]
     #[IsGranted('CAN_EDIT_PARATEXT')]
-    public function edit(Request $request, Paratext $paratext, EntityManagerInterface $entityManager, BookRepository $bookRepository): Response
+    #[Route('/{id}/edit', name: 'app_admin_paratext_edit', methods: ['GET', 'POST'])]
+    #[IsGranted('CAN_EDIT_PARATEXT')]
+    public function edit(Request $request, Paratext $paratext, EntityManagerInterface $entityManager, BookRepository $bookRepository, SluggerInterface $slugger): Response
     {
         if ($request->isMethod('POST')) {
             $title = $request->request->get('title');
@@ -112,6 +159,7 @@ class ParatextController extends AbstractController
             $type = $request->request->get('type');
             $bookId = $request->request->get('book_id');
             $chapter = $request->request->get('chapter');
+            $verse = $request->request->get('verse');
 
             if (!$title || !$type) {
                 $this->addFlash('error', 'Título e Tipo são obrigatórios.');
@@ -132,6 +180,31 @@ class ParatextController extends AbstractController
                     $paratext->setChapter(null);
                 }
 
+                if ($verse) {
+                    $paratext->setVerse((int) $verse);
+                } else {
+                    $paratext->setVerse(null);
+                }
+
+                // Image Upload
+                $imageFile = $request->files->get('image');
+                if ($imageFile) {
+                    $originalFilename = pathinfo($imageFile->getClientOriginalName(), PATHINFO_FILENAME);
+                    $safeFilename = $slugger->slug($originalFilename);
+                    $newFilename = $safeFilename . '-' . uniqid() . '.' . $imageFile->guessExtension();
+
+                    try {
+                        $imageFile->move(
+                            $this->getParameter('kernel.project_dir') . '/public/uploads/paratext',
+                            $newFilename
+                        );
+                        // Delete old image if exists? Optional but good practice.
+                        $paratext->setImage($newFilename);
+                    } catch (FileException $e) {
+                        $this->addFlash('error', 'Erro ao fazer upload da imagem.');
+                    }
+                }
+                
                 $paratext->setUpdatedAt(new \DateTimeImmutable());
 
                 $entityManager->flush();
@@ -139,10 +212,20 @@ class ParatextController extends AbstractController
                 return $this->redirectToRoute('app_admin_paratext_index', [], Response::HTTP_SEE_OTHER);
             }
         }
+        
+        $conn = $entityManager->getConnection();
+        $sql = 'SELECT book_id, chapter, MAX(verse) as max_verse FROM verse GROUP BY book_id, chapter';
+        $rows = $conn->fetchAllAssociative($sql);
+        
+        $bibleStructure = [];
+        foreach ($rows as $row) {
+             $bibleStructure[$row['book_id']]['chapters'][$row['chapter']] = $row['max_verse'];
+        }
 
         return $this->render('admin/paratext/edit.html.twig', [
             'paratext' => $paratext,
             'books' => $bookRepository->findBy([], ['bookOrder' => 'ASC']),
+            'bibleStructure' => $bibleStructure,
         ]);
     }
 

@@ -334,23 +334,16 @@ final class TranslationController extends AbstractController
         $user = $this->getUser();
         // Recipient Logic for Messages
         $recipients = [];
-        if ($this->isGranted('ROLE_REVIEWER')) {
-            // Reviewers can only send to Translators
-            // Assuming we have a method to find by role or we filter.
-            // Since roles are JSON array, we might need a custom query or filter in PHP.
-            // Let's keep it simple: Fetch all and filter? Or use a custom repository method.
-            // For efficiency, let's try a custom repository method if it exists, otherwise PHP filter.
-            // Checking UserRepository first.
-            $allUsers = $userRepository->findAll();
+        $allUsers = $userRepository->findAll();
+
+        if ($user instanceof \App\Entity\User && $user->getWorkGroup() === 2) {
+            // Revisor de Tradução (2) sees only Tradutores (1)
             $recipients = array_filter($allUsers, function ($u) {
-                return in_array('ROLE_TRANSLATOR', $u->getRoles());
+                return $u->getWorkGroup() === 1;
             });
-        } elseif ($this->isGranted('ROLE_ADMIN')) {
-            $recipients = $userRepository->findAll();
         } else {
-            // Fallback: Translators send to Reviewers/Admins?
-            // Specs didn't specify. Left broad for others, restricted for Reviewer.
-            $recipients = $userRepository->findAll();
+            // Admin and others see everyone
+            $recipients = $allUsers;
         }
         $book = $bookRepository->find($bookId);
         if (!$book) {

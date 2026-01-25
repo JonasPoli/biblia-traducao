@@ -3,145 +3,160 @@
 {% block title %}{{ paratext.title }}{% endblock %}
 
 {% block body %}
-<div class="max-w-4xl mx-auto space-y-6">
-    <div class="flex items-center justify-between">
-        <a href="{{ path('app_admin_paratext_index') }}" class="text-sm font-medium text-slate-500 hover:text-slate-900 flex items-center gap-2">
-            <sl-icon name="arrow-left"></sl-icon> Voltar
-        </a>
-        {% if is_granted('CAN_EDIT_PARATEXT') %}
-            <sl-button variant="primary" outline href="{{ path('app_admin_paratext_edit', {id: paratext.id}) }}">
-                <sl-icon slot="prefix" name="pencil"></sl-icon>
-                Editar
-            </sl-button>
-        {% endif %}
-    </div>
+<div class="w-full min-h-screen bg-slate-50/50 dark:bg-slate-900/50 pb-20">
+    <div class="max-w-[96rem] mx-auto px-4 sm:px-6 lg:px-8 pt-6">
+        {# Navigation Header #}
+        <div class="flex items-center justify-between mb-8">
+            <a href="{{ path('app_admin_paratext_index') }}" class="text-sm font-medium text-slate-500 hover:text-slate-900 dark:hover:text-slate-300 flex items-center gap-2 transition-colors">
+                <sl-icon name="arrow-left"></sl-icon> Voltar
+            </a>
+            {% if is_granted('CAN_EDIT_PARATEXT') %}
+                <sl-button variant="primary" outline href="{{ path('app_admin_paratext_edit', {id: paratext.id}) }}">
+                    <sl-icon slot="prefix" name="pencil"></sl-icon>
+                    Editar
+                </sl-button>
+            {% endif %}
+        </div>
 
-    <sl-card class="border-none bg-white/85 shadow-lg shadow-slate-900/5 ring-1 ring-white/70 backdrop-blur dark:bg-slate-900/70 dark:ring-white/10">
-        <div class="prose dark:prose-invert max-w-none p-6">
-            <div class="flex items-baseline gap-4 mb-6 border-b border-slate-100 pb-4 dark:border-white/5">
-                <span class="text-xs font-bold uppercase tracking-widest text-slate-500">{{ paratext.type }}</span>
-                {% if paratext.book %}
-                    <span class="text-xs font-medium text-slate-400">
-                        {{ paratext.book.name }} {% if paratext.chapter %}{{ paratext.chapter }}{% endif %}
+        {# Main Content - Paper Style #}
+        <div class="bg-white dark:bg-slate-900 shadow-xl shadow-slate-200/50 dark:shadow-black/20 rounded-none sm:rounded-lg min-h-[80vh] mx-auto max-w-[65rem] border border-slate-100 dark:border-slate-800">
+            <div class="px-8 py-12 md:px-16 md:py-20">
+                {# Header Info #}
+                <div class="flex flex-col sm:flex-row sm:items-baseline gap-4 mb-10 border-b border-slate-100 pb-6 dark:border-slate-800">
+                    <span class="text-xs font-bold uppercase tracking-[0.2em] text-slate-400">{{ paratext.type }}</span>
+                    {% if paratext.book %}
+                            {{ paratext.book.name }} {% if paratext.chapter %}{{ paratext.chapter }}{% endif %}{% if paratext.verse %}:{{ paratext.verse }}{% endif %}
+                        </span>
+                    {% endif %}
+                    <span class="sm:ml-auto text-xs text-slate-400 italic">
+                        Por {{ paratext.author ? paratext.author.name : 'Unknown' }} &bull; {{ paratext.createdAt|date('d/m/Y') }}
                     </span>
-                {% endif %}
-                <span class="ml-auto text-xs text-slate-400">Por {{ paratext.author ? paratext.author.name : 'Unknown' }} em {{ paratext.createdAt|date('d/m/Y') }}</span>
-            </div>
-            
-            <h1 class="text-3xl font-bold text-slate-900 dark:text-white mb-8">{{ paratext.title }}</h1>
-            
-            <div class="font-serif text-lg leading-relaxed text-slate-800 dark:text-slate-200">
-                {{ paratext.content|raw }}
-            </div>
-        </div>
-    </sl-card>
-
-    {# Comments / Messages #}
-    {% if (app.user.workGroup == 4 or app.user.workGroup == 0) and not isAuthor %}
-        <div class="mt-8">
-            <sl-card class="border-none bg-blue-50/50 shadow-sm ring-1 ring-blue-100 dark:bg-blue-900/10 dark:ring-blue-900/20">
-                <div class="flex items-center justify-between p-4">
-                    <div>
-                        <h3 class="text-sm font-bold text-slate-900 dark:text-white">Discussão e Revisão</h3>
-                        <p class="text-xs text-slate-500">Envie comentários ou sugestões sobre este conteúdo.</p>
-                    </div>
-                    <sl-button variant="primary" onclick="document.getElementById('send-message-modal').showModal()">
-                        <sl-icon slot="prefix" name="chat-dots"></sl-icon>
-                        Adicionar Comentário
-                    </sl-button>
                 </div>
-            </sl-card>
+                
+                {# Title #}
+                <h1 class="text-4xl md:text-5xl font-serif font-bold text-slate-900 dark:text-white mb-12 leading-tight tracking-tight">
+                    {{ paratext.title }}
+                </h1>
+
+                {% if paratext.image %}
+                    <div class="mb-12 flex justify-center">
+                        <img src="{{ asset('uploads/paratext/' ~ paratext.image) }}" alt="{{ paratext.title }}" class="w-3/4 h-auto rounded-lg shadow-md">
+                    </div>
+                {% endif %}
+                
+                {# Content #}
+                <div class="prose prose-xl prose-slate dark:prose-invert max-w-none font-serif leading-loose text-slate-700 dark:text-slate-300">
+                    {{ paratext.content|raw }}
+                </div>
+            </div>
         </div>
-        
-        {# Modal Reuse logic similar to Translation Verse #}
-        <!-- Reusing the new premium style -->
-        <dialog id="send-message-modal" class="p-0 rounded-xl shadow-2xl backdrop:bg-slate-900/40 w-full max-w-lg open:animate-fade-in">
-           <div class="bg-white p-8">
-                <h3 class="text-xl font-bold mb-6 text-slate-800 flex items-center gap-2">
-                    <sl-icon name="envelope" class="text-blue-600"></sl-icon> 
-                    Enviar Comentário
-                </h3>
-                <form id="send-message-form">
-                    <input type="hidden" name="context_type" value="paratext">
-                    <input type="hidden" name="context_id" value='{{ paratext.id }}'>
-                    
-                     <div class="space-y-5">
-                         <div>
-                            <label class="block text-sm font-semibold text-slate-700 mb-2">Destinatário</label>
-                             <div class="relative">
-                                 <select name="recipient_id" class="w-full pl-4 pr-10 py-2.5 bg-white border border-slate-300 rounded-lg appearance-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all outline-none text-slate-700" required>
-                                     <option value="">Selecione...</option>
-                                      {% for user in recipients %}
-                                        <option value="{{ user.id }}" selected>Autor: {{ user.name }}</option>
-                                      {% else %}
-                                        <option value="1">Administrador (Teste/Fallback)</option>
-                                      {% endfor %}
-                                 </select>
-                                 <div class="pointer-events-none absolute inset-y-0 right-0 flex items-center px-3 text-slate-500">
-                                    <sl-icon name="chevron-down" class="text-xs"></sl-icon>
+
+        {# Comments / Messages #}
+        {% if (app.user.workGroup == 4 or app.user.workGroup == 0) and not isAuthor %}
+            <div class="max-w-[65rem] mx-auto mt-12">
+                <sl-card class="border-none bg-blue-50/50 shadow-sm ring-1 ring-blue-100 dark:bg-blue-900/10 dark:ring-blue-900/20">
+                    <div class="flex items-center justify-between p-4">
+                        <div>
+                            <h3 class="text-sm font-bold text-slate-900 dark:text-white">Discussão e Revisão</h3>
+                            <p class="text-xs text-slate-500">Envie comentários ou sugestões sobre este conteúdo.</p>
+                        </div>
+                        <sl-button variant="primary" onclick="document.getElementById('send-message-modal').showModal()">
+                            <sl-icon slot="prefix" name="chat-dots"></sl-icon>
+                            Adicionar Comentário
+                        </sl-button>
+                    </div>
+                </sl-card>
+            </div>
+            
+            {# Modal Reuse logic #}
+            <dialog id="send-message-modal" class="p-0 rounded-xl shadow-2xl backdrop:bg-slate-900/40 w-full max-w-lg open:animate-fade-in">
+               <div class="bg-white dark:bg-slate-800 p-8">
+                    <h3 class="text-xl font-bold mb-6 text-slate-800 dark:text-white flex items-center gap-2">
+                        <sl-icon name="envelope" class="text-blue-600"></sl-icon> 
+                        Enviar Comentário
+                    </h3>
+                    <form id="send-message-form">
+                        <input type="hidden" name="context_type" value="paratext">
+                        <input type="hidden" name="context_id" value='{{ paratext.id }}'>
+                        
+                         <div class="space-y-5">
+                             <div>
+                                <label class="block text-sm font-semibold text-slate-700 dark:text-slate-300 mb-2">Destinatário</label>
+                                 <div class="relative">
+                                     <select name="recipient_id" class="w-full pl-4 pr-10 py-2.5 bg-white dark:bg-slate-700 border border-slate-300 dark:border-slate-600 rounded-lg appearance-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all outline-none text-slate-700 dark:text-white" required>
+                                         <option value="">Selecione...</option>
+                                          {% for user in recipients %}
+                                            <option value="{{ user.id }}" selected>Autor: {{ user.name }}</option>
+                                          {% else %}
+                                            <option value="1">Administrador (Teste/Fallback)</option>
+                                          {% endfor %}
+                                     </select>
+                                     <div class="pointer-events-none absolute inset-y-0 right-0 flex items-center px-3 text-slate-500">
+                                        <sl-icon name="chevron-down" class="text-xs"></sl-icon>
+                                     </div>
                                  </div>
                              </div>
-                         </div>
 
-                         <div>
-                            <label class="block text-sm font-semibold text-slate-700 mb-2">Assunto</label>
-                            <input type="text" name="subject" value="Comentário: {{ paratext.title }}" class="w-full px-4 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all outline-none shadow-sm" required>
-                         </div>
+                             <div>
+                                <label class="block text-sm font-semibold text-slate-700 dark:text-slate-300 mb-2">Assunto</label>
+                                <input type="text" name="subject" value="Comentário: {{ paratext.title }}" class="w-full px-4 py-2 border border-slate-300 dark:border-slate-600 dark:bg-slate-700 dark:text-white rounded-lg focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all outline-none shadow-sm" required>
+                             </div>
 
-                        <div>
-                            <label class="block text-sm font-semibold text-slate-700 mb-2">Mensagem</label>
-                            <textarea name="content" rows="4" class="w-full px-4 py-3 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all outline-none shadow-sm resize-none" placeholder="Digite seu comentário..." required></textarea>
+                            <div>
+                                <label class="block text-sm font-semibold text-slate-700 dark:text-slate-300 mb-2">Mensagem</label>
+                                <textarea name="content" rows="4" class="w-full px-4 py-3 border border-slate-300 dark:border-slate-600 dark:bg-slate-700 dark:text-white rounded-lg focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all outline-none shadow-sm resize-none" placeholder="Digite seu comentário..." required></textarea>
+                            </div>
+                            
+                            <div class="flex justify-end gap-3 pt-4 border-t border-slate-100 dark:border-slate-700">
+                                <button type="button" onclick="document.getElementById('send-message-modal').close()" class="px-5 py-2.5 text-slate-600 dark:text-slate-300 font-medium hover:bg-slate-50 dark:hover:bg-slate-700 rounded-lg transition-colors">Cancelar</button>
+                                <button type="submit" class="px-5 py-2.5 bg-blue-600 text-white font-medium rounded-lg hover:bg-blue-700 shadow-lg shadow-blue-600/30 transition-all transform active:scale-95 flex items-center gap-2">
+                                    <sl-icon name="send"></sl-icon> Enviar
+                                </button>
+                            </div>
                         </div>
-                        
-                        <div class="flex justify-end gap-3 pt-4 border-t border-slate-100">
-                            <button type="button" onclick="document.getElementById('send-message-modal').close()" class="px-5 py-2.5 text-slate-600 font-medium hover:bg-slate-50 rounded-lg transition-colors">Cancelar</button>
-                            <button type="submit" class="px-5 py-2.5 bg-blue-600 text-white font-medium rounded-lg hover:bg-blue-700 shadow-lg shadow-blue-600/30 transition-all transform active:scale-95 flex items-center gap-2">
-                                <sl-icon name="send"></sl-icon> Enviar
-                            </button>
-                        </div>
-                    </div>
-                </form>
-            </div>
-        </dialog>
-        <script>
-            document.getElementById('send-message-form').addEventListener('submit', function(e) {
-                e.preventDefault();
-                const btn = this.querySelector('button[type="submit"]');
-                const originalText = btn.innerText;
-                btn.disabled = true;
-                btn.innerText = 'Enviando...';
-                
-                const formData = new FormData(this);
-                const data = {};
-                formData.forEach((value, key) => data[key] = value);
-                
-                fetch('/admin/message/send', {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json',
-                    },
-                    body: JSON.stringify(data)
-                })
-                .then(response => response.json())
-                .then(result => {
-                    if (result.error) {
-                        alert('Erro: ' + result.error);
-                    } else {
-                        alert('Mensagem enviada!');
-                        document.getElementById('send-message-modal').close();
-                        this.reset();
-                    }
-                })
-                .catch(err => {
-                     alert('Erro ao enviar mensagem.');
-                     console.error(err);
-                })
-                .finally(() => {
-                    btn.disabled = false;
-                    btn.innerText = originalText;
+                    </form>
+                </div>
+            </dialog>
+            <script>
+                document.getElementById('send-message-form').addEventListener('submit', function(e) {
+                    e.preventDefault();
+                    const btn = this.querySelector('button[type="submit"]');
+                    const originalText = btn.innerText;
+                    btn.disabled = true;
+                    btn.innerText = 'Enviando...';
+                    
+                    const formData = new FormData(this);
+                    const data = {};
+                    formData.forEach((value, key) => data[key] = value);
+                    
+                    fetch('/admin/message/send', {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json',
+                        },
+                        body: JSON.stringify(data)
+                    })
+                    .then(response => response.json())
+                    .then(result => {
+                        if (result.error) {
+                            alert('Erro: ' + result.error);
+                        } else {
+                            alert('Mensagem enviada!');
+                            document.getElementById('send-message-modal').close();
+                            this.reset();
+                        }
+                    })
+                    .catch(err => {
+                         alert('Erro ao enviar mensagem.');
+                         console.error(err);
+                    })
+                    .finally(() => {
+                        btn.disabled = false;
+                        btn.innerText = originalText;
+                    });
                 });
-            });
-        </script>
-    {% endif %}
+            </script>
+        {% endif %}
+    </div>
 </div>
 {% endblock %}

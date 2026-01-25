@@ -143,4 +143,34 @@ class Paratext
 
         return $this;
     }
+
+    #[ORM\Column(length: 255, nullable: true)]
+    private ?string $image = null;
+
+    public function getImage(): ?string
+    {
+        return $this->image;
+    }
+
+    public function setImage(?string $image): static
+    {
+        $this->image = $image;
+
+        return $this;
+    }
+
+    #[ORM\Column(nullable: true)]
+    private ?int $verse = null;
+
+    public function getVerse(): ?int
+    {
+        return $this->verse;
+    }
+
+    public function setVerse(?int $verse): static
+    {
+        $this->verse = $verse;
+
+        return $this;
+    }
 }

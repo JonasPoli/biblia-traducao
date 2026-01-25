@@ -43,9 +43,13 @@ final class DashboardController extends AbstractController
         // Let's rely on MessageRepository to fetch relevant messages.
         // User wants: "Mensagens não respondidas" (Count?) and "Lista das mensagens (menos as resolvidas)"
 
-        $messages = $messageRepository->findByUser($user);
-        $activeMessages = array_filter($messages, fn($m) => !in_array($m->getStatus(), ['resolved', 'ignored']));
-        $unansweredCount = count(array_filter($messages, fn($m) => $m->getStatus() === 'new' && $m->getRecipient() === $user));
+        if ((int) $user->getWorkGroup() === 0) {
+            $activeMessages = $messageRepository->findAllConversations(null);
+        } else {
+            $activeMessages = $messageRepository->findConversations($user, null);
+        }
+
+        $unansweredCount = count($messageRepository->findUnreadByUser($user));
 
         // Paratext Lists based on Role
         $myParatexts = [];

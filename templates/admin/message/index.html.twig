@@ -4,98 +4,157 @@
 
 {% block body %}
  <div class="max-w-4xl mx-auto px-4 py-8">
-    <div class="flex items-center justify-between mb-6">
-        <h1 class="text-2xl font-bold text-slate-900 dark:text-white">Mensagens</h1>
-        <!-- Optional: Filter or New Message -->
-    </div>
+    <div class="flex flex-col gap-6">
+        <div class="flex items-center justify-between">
+            <h1 class="text-2xl font-bold text-slate-900 dark:text-white">Mensagens</h1>
+            <!-- Optional: New Message Button -->
+        </div>
 
-    <div class="bg-white dark:bg-slate-800 rounded-2xl shadow-sm ring-1 ring-slate-200 dark:ring-slate-700 overflow-hidden">
-        {% if conversations is empty %}
-            <div class="p-12 text-center text-slate-500 dark:text-slate-400">
-                <sl-icon name="chat" class="text-4xl mb-4 text-slate-300"></sl-icon>
-                <div class="text-lg font-medium text-slate-900 dark:text-white">Nenhuma conversa</div>
-                <p class="mt-1">Suas interações aparecerão aqui.</p>
-            </div>
-        {% else %}
-            <div class="divide-y divide-slate-100 dark:divide-slate-700/50">
-                {% for conv in conversations %}
-                    {# Logic to determine Contact and Last Message #}
-                    {% set contact = (conv.sender == app.user) ? conv.recipient : conv.sender %}
-                    
-                    {# Find the real last message (Root or Reply) #}
-                    {% set lastMsg = conv %}
-                    {% set unreadCount = 0 %}
-                    
-                    {# Check Root Unread #}
-                    {% if conv.recipient == app.user and conv.status == 'unread' %}
-                        {% set unreadCount = unreadCount + 1 %}
-                    {% endif %}
+        {# Filter Menu #}
+        <div class="flex flex-wrap gap-2 pb-2">
+            {% set filters = {
+                'unresolved': 'Não Resolvidos',
+                'resolved': 'Resolvida',
+                'all': 'Todos'
+            } %}
+            
+            {% for key, label in filters %}
+                {# 'unresolved' maps to no status param (null) for default repo logic, or we can use 'unresolved' if we handled it explicitly. 
+                   The repo handles null as "not resolved". So let's use null for 'unresolved'. 
+                #}
+                {% set filterStatus = (key == 'unresolved') ? null : key %}
+                {% set isActive = (currentStatus == filterStatus) or (currentStatus is null and key == 'unresolved') %}
+                
+                <a href="{{ path('app_admin_message_index', {'status': filterStatus}) }}" 
+                   class="px-4 py-2 rounded-full text-sm font-medium transition-colors cursor-pointer
+                          {{ isActive ? 'bg-blue-600 text-white' : 'bg-white dark:bg-slate-800 text-slate-600 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-700 ring-1 ring-slate-200 dark:ring-slate-700' }}">
+                    {{ label }}
+                </a>
+            {% endfor %}
+        </div>
 
-                    {% for reply in conv.replies %}
-                        {% if reply.sentAt > lastMsg.sentAt %}
-                            {% set lastMsg = reply %}
-                        {% endif %}
+        <div class="bg-white dark:bg-slate-800 rounded-2xl shadow-sm ring-1 ring-slate-200 dark:ring-slate-700 overflow-hidden">
+            {% if conversations is empty %}
+                <div class="p-12 text-center text-slate-500 dark:text-slate-400">
+                    <sl-icon name="chat" class="text-4xl mb-4 text-slate-300"></sl-icon>
+                    <div class="text-lg font-medium text-slate-900 dark:text-white">Nenhuma conversa encontrada</div>
+                    <p class="mt-1">Tente alterar o filtro para ver mais mensagens.</p>
+                </div>
+            {% else %}
+                <div class="divide-y divide-slate-100 dark:divide-slate-700/50">
+                    {% for conv in conversations %}
+                        {# Logic to determine Contact and Last Message #}
+                        {% set contact = (conv.sender == app.user) ? conv.recipient : conv.sender %}
                         
-                        {% if reply.recipient == app.user and reply.status == 'unread' %}
+                        {# Find the real last message (Root or Reply) #}
+                        {% set lastMsg = conv %}
+                        {% set unreadCount = 0 %}
+                        
+                        {# Check Root Unread #}
+                        {% if conv.recipient == app.user and conv.status == 'unread' %}
                             {% set unreadCount = unreadCount + 1 %}
                         {% endif %}
-                    {% endfor %}
 
-                    {# Visual State #}
-                    {% set isResolved = (conv.status == 'resolved') %}
-                    
-                    <div onclick="openMessageModal({{ conv.id }})" 
-                         class="relative flex items-center gap-4 p-4 hover:bg-slate-50 dark:hover:bg-slate-700/50 transition-all cursor-pointer group {{ isResolved ? 'opacity-50 grayscale bg-slate-50' : 'bg-white dark:bg-slate-800' }}">
-                         
-                        <!-- Avatar -->
-                        <div class="shrink-0 relative">
-                            <div class="w-12 h-12 rounded-full bg-blue-100 flex items-center justify-center text-blue-700 font-bold text-lg dark:bg-blue-900 dark:text-blue-300">
-                                {{ contact.name|first }}
-                            </div>
-                            {% if unreadCount > 0 %}
-                                <div class="absolute -top-1 -right-1 w-5 h-5 bg-green-500 border-2 border-white dark:border-slate-800 rounded-full flex items-center justify-center text-[10px] text-white font-bold">
-                                    {{ unreadCount > 9 ? '9+' : unreadCount }}
-                                </div>
+                        {% for reply in conv.replies %}
+                            {% if reply.sentAt > lastMsg.sentAt %}
+                                {% set lastMsg = reply %}
                             {% endif %}
-                        </div>
-
-                        <!-- Content -->
-                        <div class="flex-1 min-w-0">
-                            <div class="flex justify-between items-baseline mb-1">
-                                <h3 class="text-sm font-semibold text-slate-900 dark:text-white truncate pr-2">
-                                    {{ contact.name }}
-                                </h3>
-                                <span class="text-xs text-slate-400 whitespace-nowrap {{ unreadCount > 0 ? 'text-green-600 font-bold' : '' }}">
-                                    {{ lastMsg.sentAt|date('H:i') }}
-                                    {% if lastMsg.sentAt|date('Y-m-d') != "now"|date('Y-m-d') %}
-                                        <span class="font-normal text-slate-400 ml-1">{{ lastMsg.sentAt|date('d/m') }}</span>
-                                    {% endif %}
-                                </span>
-                            </div>
                             
-                            <div class="flex justify-between items-center">
-                                <p class="text-sm truncate text-slate-500 dark:text-slate-400 {{ unreadCount > 0 ? 'font-semibold text-slate-800 dark:text-slate-200' : '' }}">
-                                    {% if lastMsg.sender == app.user %}
-                                        <sl-icon name="check" class="text-xs mr-1 align-middle opacity-60"></sl-icon>
+                            {% if reply.recipient == app.user and reply.status == 'unread' %}
+                                {% set unreadCount = unreadCount + 1 %}
+                            {% endif %}
+                        {% endfor %}
+
+                        {# Visual State #}
+                        {% set isResolved = (conv.status == 'resolved') %}
+                        
+                        <div class="group relative flex items-center gap-4 p-4 hover:bg-slate-50 dark:hover:bg-slate-700/50 transition-all {{ isResolved ? 'opacity-75 grayscale-[0.5] bg-slate-50' : 'bg-white dark:bg-slate-800' }}">
+                             
+                            <!-- Avatar -->
+                            <div class="shrink-0 relative flex items-center" onclick="openMessageModal({{ conv.id }})">
+                                {% if isAdmin %}
+                                    {# Admin view: Show both avatars #}
+                                    <div class="flex -space-x-4">
+                                        {% for user in [conv.sender, conv.recipient] %}
+                                            {% if user.image %}
+                                                <img src="{{ asset('uploads/avatars/' ~ user.image) }}" alt="{{ user.name }}" 
+                                                     class="w-10 h-10 rounded-full object-cover shadow-sm ring-2 ring-white dark:ring-slate-800 z-10 first:z-0">
+                                            {% else %}
+                                                <div class="w-10 h-10 rounded-full bg-slate-100 flex items-center justify-center text-slate-700 ring-2 ring-white dark:ring-slate-800 dark:bg-slate-700 dark:text-slate-300 font-bold text-xs z-10 first:z-0">
+                                                    {{ user.name|first }}
+                                                </div>
+                                            {% endif %}
+                                        {% endfor %}
+                                    </div>
+                                {% else %}
+                                    {# User view: Show contact only #}
+                                    {% if contact.image %}
+                                        <img src="{{ asset('uploads/avatars/' ~ contact.image) }}" alt="{{ contact.name }}" class="w-12 h-12 rounded-full object-cover shadow-sm ring-1 ring-slate-100 dark:ring-slate-700">
+                                    {% else %}
+                                        <div class="w-12 h-12 rounded-full bg-blue-100 flex items-center justify-center text-blue-700 font-bold text-lg dark:bg-blue-900 dark:text-blue-300">
+                                            {{ contact.name|first }}
+                                        </div>
                                     {% endif %}
-                                    {{ lastMsg.content }}
-                                </p>
+                                {% endif %}
+                                
                                 {% if unreadCount > 0 %}
-                                    <div class="w-2.5 h-2.5 bg-green-500 rounded-full shrink-0 ml-2"></div>
+                                    <div class="absolute -top-1 -right-1 w-5 h-5 bg-green-500 border-2 border-white dark:border-slate-800 rounded-full flex items-center justify-center text-[10px] text-white font-bold z-20">
+                                        {{ unreadCount > 9 ? '9+' : unreadCount }}
+                                    </div>
                                 {% endif %}
                             </div>
-                        </div>
 
-                        <!-- Resolved Badge (Optional, overlay) -->
-                        {% if isResolved %}
-                            <div class="absolute right-4 top-4 px-2 py-0.5 rounded text-[10px] font-bold bg-slate-200 text-slate-600">
-                                RESOLVIDO
+                            <!-- Content -->
+                            <div class="flex-1 min-w-0 cursor-pointer" onclick="openMessageModal({{ conv.id }})">
+                                <div class="flex justify-between items-baseline mb-1">
+                                    <h3 class="text-sm font-semibold text-slate-900 dark:text-white truncate pr-2">
+                                        {{ contact.name }}
+                                        {% if conv.subject %}
+                                            <span class="font-normal text-slate-500 mx-1">-</span>
+                                            <span class="font-normal text-slate-600">{{ conv.subject }}</span>
+                                        {% endif %}
+                                    </h3>
+                                    <span class="text-xs text-slate-400 whitespace-nowrap {{ unreadCount > 0 ? 'text-green-600 font-bold' : '' }}">
+                                        {{ lastMsg.sentAt|date('H:i') }}
+                                        {% if lastMsg.sentAt|date('Y-m-d') != "now"|date('Y-m-d') %}
+                                            <span class="font-normal text-slate-400 ml-1">{{ lastMsg.sentAt|date('d/m') }}</span>
+                                        {% endif %}
+                                    </span>
+                                </div>
+                                
+                                <div class="flex justify-between items-center">
+                                    <p class="text-sm truncate text-slate-500 dark:text-slate-400 {{ unreadCount > 0 ? 'font-semibold text-slate-800 dark:text-slate-200' : '' }}">
+                                        {% if lastMsg.sender == app.user %}
+                                            <sl-icon name="check" class="text-xs mr-1 align-middle opacity-60"></sl-icon>
+                                        {% endif %}
+                                        {{ lastMsg.content }}
+                                    </p>
+                                    {% if unreadCount > 0 %}
+                                        <div class="w-2.5 h-2.5 bg-green-500 rounded-full shrink-0 ml-2"></div>
+                                    {% endif %}
+                                </div>
                             </div>
-                        {% endif %}
-                    </div>
-                {% endfor %}
-            </div>
-        {% endif %}
+
+                            <!-- Actions -->
+                            <div class="flex items-center gap-2 pl-4 border-l border-slate-100 dark:border-slate-700 ml-2">
+                                {% if not isResolved %}
+                                    <sl-tooltip content="Marcar como Resolvido">
+                                        <sl-button variant="success" size="small" outline circle class="hover:bg-green-50" onclick="markAsResolved(event, {{ conv.id }})">
+                                            <sl-icon name="check-lg" label="Resolver"></sl-icon>
+                                        </sl-button>
+                                    </sl-tooltip>
+                                {% else %}
+                                     <div class="text-xs font-bold text-green-600 px-2 py-1 bg-green-50 rounded border border-green-200">
+                                        RESOLVIDO
+                                     </div>
+                                {% endif %}
+                            </div>
+
+                        </div>
+                    {% endfor %}
+                </div>
+            {% endif %}
+        </div>
     </div>
 
     <!-- Modal -->
@@ -127,6 +186,24 @@
                 .catch(err => {
                     content.innerHTML = '<div class="p-6 text-red-500">Erro ao carregar mensagem.</div>';
                 });
+        }
+
+        function markAsResolved(event, id) {
+            event.stopPropagation(); // Prevent opening modal
+            if (!confirm('Tem certeza que deseja marcar esta conversa como resolvida?')) return;
+
+            fetch(`/admin/message/${id}/status/resolved`, {
+                method: 'POST'
+            })
+            .then(res => res.json())
+            .then(data => {
+                if (data.status === 'success') {
+                    window.location.reload();
+                } else {
+                    alert('Erro ao atualizar status');
+                }
+            })
+            .catch(err => console.error(err));
         }
 
         // Auto-open modal if 'open' param is present

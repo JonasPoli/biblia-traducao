@@ -26,13 +26,32 @@ class UserController extends AbstractController
     }
 
     #[Route('/new', name: 'app_admin_user_new', methods: ['GET', 'POST'])]
-    public function new(Request $request, EntityManagerInterface $entityManager, UserPasswordHasherInterface $userPasswordHasher): Response
+    public function new(Request $request, EntityManagerInterface $entityManager, UserPasswordHasherInterface $userPasswordHasher, \Symfony\Component\String\Slugger\SluggerInterface $slugger): Response
     {
         $user = new User();
         $form = $this->createForm(UserType::class, $user);
         $form->handleRequest($request);
 
         if ($form->isSubmitted() && $form->isValid()) {
+            // Handle Image Upload
+            $imageFile = $form->get('imageFile')->getData();
+            if ($imageFile) {
+                $originalFilename = pathinfo($imageFile->getClientOriginalName(), PATHINFO_FILENAME);
+                $safeFilename = $slugger->slug($originalFilename);
+                $newFilename = $safeFilename.'-'.uniqid().'.'.$imageFile->guessExtension();
+
+                try {
+                    $imageFile->move(
+                        $this->getParameter('kernel.project_dir') . '/public/uploads/avatars',
+                        $newFilename
+                    );
+                } catch (\Symfony\Component\HttpFoundation\File\Exception\FileException $e) {
+                    // ... handle exception if something happens during file upload
+                }
+
+                $user->setImage($newFilename);
+            }
+
             // encode the plain password
             if ($user->getPassword() === null) {
                 // Generate random password if not provided (though form handles it, good fallback)
@@ -70,12 +89,31 @@ class UserController extends AbstractController
     }
 
     #[Route('/{id}/edit', name: 'app_admin_user_edit', methods: ['GET', 'POST'])]
-    public function edit(Request $request, User $user, EntityManagerInterface $entityManager, UserPasswordHasherInterface $userPasswordHasher): Response
+    public function edit(Request $request, User $user, EntityManagerInterface $entityManager, UserPasswordHasherInterface $userPasswordHasher, \Symfony\Component\String\Slugger\SluggerInterface $slugger): Response
     {
         $form = $this->createForm(UserType::class, $user);
         $form->handleRequest($request);
 
         if ($form->isSubmitted() && $form->isValid()) {
+            // Handle Image Upload
+            $imageFile = $form->get('imageFile')->getData();
+            if ($imageFile) {
+                $originalFilename = pathinfo($imageFile->getClientOriginalName(), PATHINFO_FILENAME);
+                $safeFilename = $slugger->slug($originalFilename);
+                $newFilename = $safeFilename.'-'.uniqid().'.'.$imageFile->guessExtension();
+
+                try {
+                    $imageFile->move(
+                        $this->getParameter('kernel.project_dir') . '/public/uploads/avatars',
+                        $newFilename
+                    );
+                } catch (\Symfony\Component\HttpFoundation\File\Exception\FileException $e) {
+                    // ... handle exception if something happens during file upload
+                }
+
+                $user->setImage($newFilename);
+            }
+
             $strPassword = $form->get('plainPassword')->getData();
             if ($strPassword) {
                 $user->setPassword(

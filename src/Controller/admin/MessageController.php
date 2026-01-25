@@ -34,22 +34,26 @@ class MessageController extends AbstractController
     }
 
     #[Route('/', name: 'app_admin_message_index', methods: ['GET'])]
-    public function index(MessageRepository $messageRepository): Response
+    public function index(MessageRepository $messageRepository, Request $request): Response
     {
         $user = $this->getUser();
         if (!$user instanceof User) {
             throw $this->createAccessDeniedException();
         }
 
+        $status = $request->query->get('status');
+        // If no status is provided, default to null (repo handles default of unread/read/ignored/replied)
+
         if ((int) $user->getWorkGroup() === 0) { // Admin
-            $conversations = $messageRepository->findAllConversations();
+            $conversations = $messageRepository->findAllConversations($status);
         } else {
-            $conversations = $messageRepository->findConversations($user);
+            $conversations = $messageRepository->findConversations($user, $status);
         }
 
         return $this->render('admin/message/index.html.twig', [
             'conversations' => $conversations,
             'isAdmin' => (int) $user->getWorkGroup() === 0,
+            'currentStatus' => $status,
         ]);
     }
 

@@ -3,10 +3,21 @@
 {% block body %}
 <div class="space-y-8">
     <section class="flex flex-wrap items-center justify-between gap-4 rounded-[32px] bg-white/80 p-6 shadow-xl shadow-slate-900/5 ring-1 ring-white/70 backdrop-blur dark:bg-slate-900/70 dark:ring-white/10">
-        <div>
-            <p class="text-xs font-semibold uppercase tracking-[0.35em] text-slate-500 dark:text-slate-400">Detalhes</p>
-            <h1 class="mt-2 text-3xl font-semibold text-slate-900 dark:text-white">{{ user.name }}</h1>
-            <p class="mt-2 text-sm text-slate-500 dark:text-slate-400">Username: {{ user.username }}</p>
+        <div class="flex items-center gap-4">
+            <div class="h-16 w-16 flex-shrink-0">
+                {% if user.image %}
+                    <img class="h-16 w-16 rounded-full object-cover ring-2 ring-white dark:ring-slate-800" src="{{ asset('uploads/avatars/' ~ user.image) }}" alt="{{ user.name }}">
+                {% else %}
+                    <div class="flex h-16 w-16 items-center justify-center rounded-full bg-slate-100 text-slate-500 ring-2 ring-white dark:bg-slate-800 dark:text-slate-400 dark:ring-slate-800">
+                        <sl-icon name="person" class="text-3xl"></sl-icon>
+                    </div>
+                {% endif %}
+            </div>
+            <div>
+                <p class="text-xs font-semibold uppercase tracking-[0.35em] text-slate-500 dark:text-slate-400">Detalhes</p>
+                <h1 class="mt-1 text-3xl font-semibold text-slate-900 dark:text-white">{{ user.name }}</h1>
+                <p class="text-sm text-slate-500 dark:text-slate-400">Username: {{ user.username }}</p>
+            </div>
         </div>
         <div class="flex flex-wrap gap-3">
             <sl-button variant="default" outline href="{{ path('app_admin_user_edit', {'id': user.id}) }}">

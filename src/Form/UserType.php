@@ -8,6 +8,7 @@ use Symfony\Component\Form\Extension\Core\Type\ChoiceType;
 use Symfony\Component\Form\Extension\Core\Type\EmailType;
 use Symfony\Component\Form\Extension\Core\Type\PasswordType;
 use Symfony\Component\Form\Extension\Core\Type\TextType;
+use Symfony\Component\Form\Extension\Core\Type\FileType;
 use Symfony\Component\Form\FormBuilderInterface;
 use Symfony\Component\OptionsResolver\OptionsResolver;
 use Symfony\Component\Validator\Constraints\Length;
@@ -20,6 +21,12 @@ class UserType extends AbstractType
         $builder
             ->add('name', TextType::class, [
                 'label' => 'Nome',
+            ])
+            ->add('imageFile', FileType::class, [
+                'label' => 'Foto (Avatar)',
+                'mapped' => false,
+                'required' => false,
+                'help' => 'Envie uma imagem (JPG ou PNG)',
             ])
             ->add('email', EmailType::class, [
                 'label' => 'E-mail',

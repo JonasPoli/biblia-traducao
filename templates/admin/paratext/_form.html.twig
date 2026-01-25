@@ -1,5 +1,5 @@
 {{ form_start|default('') }}
-<form method="post" class="space-y-6">
+<form method="post" class="space-y-6" enctype="multipart/form-data">
     <div class="grid gap-6 md:grid-cols-2">
         <div class="space-y-2">
             <label class="text-xs font-semibold uppercase tracking-[0.3em] text-slate-500 dark:text-slate-400">Título</label>
@@ -9,10 +9,24 @@
             <label class="text-xs font-semibold uppercase tracking-[0.3em] text-slate-500 dark:text-slate-400">Tipo</label>
             <select name="type" class="w-full rounded-2xl border border-slate-200 bg-white/70 px-4 py-3 text-sm text-slate-900 focus:border-slate-400 focus:outline-none" required>
                 <option value="">Selecione...</option>
-                <option value="introduction" {% if paratext.type == 'introduction' %}selected{% endif %}>Introdução</option>
-                <option value="article" {% if paratext.type == 'article' %}selected{% endif %}>Artigo</option>
-                <option value="map" {% if paratext.type == 'map' %}selected{% endif %}>Mapa</option>
-                <option value="note" {% if paratext.type == 'note' %}selected{% endif %}>Nota Explicativa</option>
+                <optgroup label="Introduções">
+                    <option value="intro_book" {% if paratext.type == 'intro_book' %}selected{% endif %}>Introdução por Livro</option>
+                    <option value="intro_chapter" {% if paratext.type == 'intro_chapter' %}selected{% endif %}>Introdução de Capítulo</option>
+                </optgroup>
+                <optgroup label="Notas">
+                    <option value="note_pericope" {% if paratext.type == 'note_pericope' %}selected{% endif %}>Texto sobre Perícopes</option>
+                    <option value="note_geo" {% if paratext.type == 'note_geo' %}selected{% endif %}>Notas Geográficas</option>
+                    <option value="note_historical" {% if paratext.type == 'note_historical' %}selected{% endif %}>Notas Históricas</option>
+                    <option value="note_character" {% if paratext.type == 'note_character' %}selected{% endif %}>Notas sobre Personagens</option>
+                    <option value="note_cultural" {% if paratext.type == 'note_cultural' %}selected{% endif %}>Notas Culturais / Antropológicas</option>
+                    <option value="note" {% if paratext.type == 'note' %}selected{% endif %}>Nota Explicativa (Geral)</option>
+                </optgroup>
+                <optgroup label="Mapas e Ilustrações">
+                    <option value="map_geo" {% if paratext.type == 'map_geo' %}selected{% endif %}>Mapas Geográficos</option>
+                    <option value="timeline" {% if paratext.type == 'timeline' %}selected{% endif %}>Linhas do Tempo</option>
+                    <option value="genealogy" {% if paratext.type == 'genealogy' %}selected{% endif %}>Árvores Genealógicas</option>
+                    <option value="article" {% if paratext.type == 'article' %}selected{% endif %}>Artigo (Geral)</option>
+                </optgroup>
             </select>
         </div>
     </div>
@@ -33,8 +47,26 @@
             </select>
         </div>
         <div class="space-y-2">
+            <label class="text-xs font-semibold uppercase tracking-[0.3em] text-slate-500 dark:text-slate-400">Imagem de Capa (Opcional)</label>
+            {% if paratext.image %}
+                <div class="mb-2">
+                    <img src="{{ asset('uploads/paratext/' ~ paratext.image) }}" alt="Current Image" class="h-20 w-auto rounded border border-slate-200">
+                </div>
+            {% endif %}
+            <input type="file" name="image" accept="image/avif,image/gif,image/png,image/jpeg" class="w-full rounded-2xl border border-slate-200 bg-white/70 px-4 py-3 text-sm text-slate-900 focus:border-slate-400 focus:outline-none">
+            <p class="text-xs text-slate-500">Formatos: AVIF, GIF, PNG, JPG</p>
+        </div>
+        <div class="space-y-2">
             <label class="text-xs font-semibold uppercase tracking-[0.3em] text-slate-500 dark:text-slate-400">Capítulo (Opcional)</label>
-            <input type="number" name="chapter" value="{{ paratext.chapter }}" class="w-full rounded-2xl border border-slate-200 bg-white/70 px-4 py-3 text-sm text-slate-900 focus:border-slate-400 focus:outline-none">
+            <select id="paratext_chapter" name="chapter" class="w-full rounded-2xl border border-slate-200 bg-white/70 px-4 py-3 text-sm text-slate-900 focus:border-slate-400 focus:outline-none" disabled>
+                <option value="">Selecione o Livro primeiro...</option>
+            </select>
+        </div>
+        <div class="space-y-2">
+            <label class="text-xs font-semibold uppercase tracking-[0.3em] text-slate-500 dark:text-slate-400">Versículo (Opcional)</label>
+            <select id="paratext_verse" name="verse" class="w-full rounded-2xl border border-slate-200 bg-white/70 px-4 py-3 text-sm text-slate-900 focus:border-slate-400 focus:outline-none" disabled>
+                <option value="">Selecione o Capítulo primeiro...</option>
+            </select>
         </div>
     </div>
 
@@ -47,3 +79,98 @@
     </div>
 </form>
 {{ form_end|default('') }}
+
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        // Embed Bible Configuration from Controller
+        const bibleStructure = {{ bibleStructure|default({})|json_encode|raw }};
+        
+        const bookSelect = document.querySelector('select[name="book_id"]');
+        const chapterSelect = document.getElementById('paratext_chapter');
+        const verseSelect = document.getElementById('paratext_verse');
+        
+        // Restore values from server (for edit or error repaint)
+        const initialChapter = '{{ paratext.chapter }}';
+        const initialVerse = '{{ paratext.verse }}';
+        
+        function updateChapterState() {
+            const bookId = bookSelect.value;
+            
+            // Clear current options
+            chapterSelect.innerHTML = '<option value="">Selecione...</option>';
+            
+            if (!bookId) {
+                chapterSelect.disabled = true;
+                updateVerseState(); // Disable verse too
+            } else {
+                chapterSelect.disabled = false;
+                
+                // Populate Chapters
+                const bookData = bibleStructure[bookId];
+                if (bookData && bookData.chapters) {
+                    const chapters = Object.keys(bookData.chapters).map(Number).sort((a, b) => a - b);
+                    chapters.forEach(chapNum => {
+                        const option = document.createElement('option');
+                        option.value = chapNum;
+                        option.textContent = chapNum;
+                        if (initialChapter && chapNum == initialChapter) {
+                            option.selected = true;
+                        }
+                        chapterSelect.appendChild(option);
+                    });
+                }
+            }
+            // Trigger verse update in case a chapter is selected (if we were preserving selection logic better, but basic flow resets)
+            // If we JUST loaded, we might have selected a chapter, so we run verse update.
+            updateVerseState();
+        }
+        
+        function updateVerseState() {
+            const bookId = bookSelect.value;
+            const chapter = chapterSelect.value;
+            
+            // Clear current options
+            verseSelect.innerHTML = '<option value="">Selecione...</option>';
+            
+            if (!bookId || !chapter) {
+                verseSelect.disabled = true;
+            } else {
+                verseSelect.disabled = false;
+                
+                // Populate Verses
+                const bookData = bibleStructure[bookId];
+                if (bookData && bookData.chapters && bookData.chapters[chapter]) {
+                    const maxVerse = bookData.chapters[chapter];
+                    for (let i = 1; i <= maxVerse; i++) {
+                        const option = document.createElement('option');
+                        option.value = i;
+                        option.textContent = i;
+                        // Only auto-select on initial load if matches
+                        // We check if verseSelect has a value? No, relying on variable logic for now requires care.
+                        // Simple approach: check against initialVerse ONLY if existing value is empty (first load checks)
+                        // Actually, initialVerse is constant from server render.
+                        // Better: check if we should select it.
+                        // Caveat: if user changes chapter, we shouldn't re-select initialVerse unless valid? 
+                        // Actually if user changes chapter, verse should reset.
+                        if (initialVerse && i == initialVerse && chapter == initialChapter) {
+                            option.selected = true;
+                        }
+                        verseSelect.appendChild(option);
+                    }
+                }
+            }
+        }
+        
+        // Listeners
+        bookSelect.addEventListener('change', function() {
+            // When book changes, reset selection logic for initial
+            // Actually, we just rebuild. User loses selection.
+            updateChapterState(); 
+        });
+        
+        chapterSelect.addEventListener('change', updateVerseState);
+        
+        // Initial Load
+        updateChapterState();
+    });
+</script>

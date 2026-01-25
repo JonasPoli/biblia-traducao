@@ -82,12 +82,45 @@
                 <div class="max-h-[400px] overflow-y-auto space-y-2">
                     {% for msg in messages %}
                         <a href="{{ path('app_admin_message_index') }}?open={{ msg.id }}" class="block p-3 rounded-lg hover:bg-slate-50 dark:hover:bg-white/5 border border-slate-100 dark:border-slate-800 transition-colors">
-                            <div class="flex justify-between text-xs mb-1">
-                                <span class="font-semibold text-slate-700 dark:text-slate-300">{{ msg.sender == app.user ? 'Para: ' ~ msg.recipient.name : 'De: ' ~ msg.sender.name }}</span>
-                                <span class="text-slate-400">{{ msg.sentAt|date('d/m H:i') }}</span>
+                            <div class="flex items-start gap-3">
+                                <!-- Avatar(s) -->
+                                <div class="shrink-0 relative flex items-center mt-1">
+                                    {% if app.user.workGroup == 0 %}
+                                        {# Admin view: Show both avatars #}
+                                        <div class="flex -space-x-3">
+                                            {% for user in [msg.sender, msg.recipient] %}
+                                                {% if user.image %}
+                                                    <img src="{{ asset('uploads/avatars/' ~ user.image) }}" alt="{{ user.name }}" 
+                                                         class="w-8 h-8 rounded-full object-cover shadow-sm ring-2 ring-white dark:ring-slate-800 z-10 first:z-0">
+                                                {% else %}
+                                                    <div class="w-8 h-8 rounded-full bg-slate-100 flex items-center justify-center text-slate-700 ring-2 ring-white dark:ring-slate-800 dark:bg-slate-700 dark:text-slate-300 font-bold text-[10px] z-10 first:z-0">
+                                                        {{ user.name|first }}
+                                                    </div>
+                                                {% endif %}
+                                            {% endfor %}
+                                        </div>
+                                    {% else %}
+                                        {# User view: Show contact only #}
+                                        {% set contact = (msg.sender == app.user) ? msg.recipient : msg.sender %}
+                                        {% if contact.image %}
+                                            <img src="{{ asset('uploads/avatars/' ~ contact.image) }}" alt="{{ contact.name }}" class="w-10 h-10 rounded-full object-cover shadow-sm ring-1 ring-slate-100 dark:ring-slate-700">
+                                        {% else %}
+                                            <div class="w-10 h-10 rounded-full bg-blue-100 flex items-center justify-center text-blue-700 font-bold text-sm dark:bg-blue-900 dark:text-blue-300">
+                                                {{ contact.name|first }}
+                                            </div>
+                                        {% endif %}
+                                    {% endif %}
+                                </div>
+
+                                <div class="flex-1 min-w-0">
+                                    <div class="flex justify-between text-xs mb-1">
+                                        <span class="font-semibold text-slate-700 dark:text-slate-300 truncate">{{ msg.sender == app.user ? 'Para: ' ~ msg.recipient.name : 'De: ' ~ msg.sender.name }}</span>
+                                        <span class="text-slate-400 shrink-0 ml-2 whitespace-nowrap">{{ msg.sentAt|date('d/m H:i') }}</span>
+                                    </div>
+                                    <p class="text-sm font-medium text-slate-800 dark:text-white truncate">{{ msg.subject }}</p>
+                                    <p class="text-xs text-slate-500 truncate">{{ msg.content }}</p>
+                                </div>
                             </div>
-                            <p class="text-sm font-medium text-slate-800 dark:text-white truncate">{{ msg.subject }}</p>
-                            <p class="text-xs text-slate-500 truncate">{{ msg.content }}</p>
                         </a>
                     {% else %}
                         <div class="text-center py-8 text-slate-400 text-sm">
