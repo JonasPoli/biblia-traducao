@@ -10,6 +10,7 @@ use App\Repository\VerseTextRepository;
 use App\Repository\VerseWordRepository;
 use Symfony\Contracts\Cache\CacheInterface;
 use Symfony\Contracts\Cache\ItemInterface;
+use Psr\Cache\CacheItemPoolInterface;
 
 class LouwNidaService
 {
@@ -22,8 +23,19 @@ class LouwNidaService
         private BookRepository $bookRepository,
         private VerseWordRepository $verseWordRepository,
         private VerseTextRepository $verseTextRepository,
-        private CacheInterface $cache
+        private CacheInterface $cache,
+        private CacheItemPoolInterface $cachePool
     ) {
+    }
+
+    public function hasDomainData(int $domainNumber): bool
+    {
+        return $this->cachePool->hasItem('louw_nida_domain_' . $domainNumber);
+    }
+
+    public function hasSubdomainData(int $domainNumber, int $subdomainNumber): bool
+    {
+        return $this->cachePool->hasItem('louw_nida_subdomain_' . $domainNumber . '_' . $subdomainNumber);
     }
 
     public function getDomainData(int $domainNumber): array

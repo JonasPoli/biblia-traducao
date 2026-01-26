@@ -18,7 +18,8 @@ class LouwNidaCacheCommand extends Command
 {
     public function __construct(
         private LouwNidaService $louwNidaService,
-        private LouwNidaDomainRepository $louwNidaDomainRepository
+        private LouwNidaDomainRepository $louwNidaDomainRepository,
+        private \Doctrine\ORM\EntityManagerInterface $entityManager
     ) {
         parent::__construct();
     }
@@ -27,6 +28,8 @@ class LouwNidaCacheCommand extends Command
     {
         $io = new SymfonyStyle($input, $output);
         $io->title('Warming up Louw-Nida Cache');
+
+        ini_set('memory_limit', '512M');
 
         // 1. Get all unique domain numbers
         $io->section('Fetching Domains...');
@@ -51,14 +54,22 @@ class LouwNidaCacheCommand extends Command
 
             // Cache Domain Data (only once per domain)
             if (!isset($domainsProcessed[$domainNum])) {
-                $this->louwNidaService->getDomainData($domainNum);
+                if (!$this->louwNidaService->hasDomainData($domainNum)) {
+                    $this->louwNidaService->getDomainData($domainNum);
+                }
                 $domainsProcessed[$domainNum] = true;
                 $domainCount++;
             }
 
             // Cache Subdomain Data
-            $this->louwNidaService->getSubdomainData($domainNum, $subdomainNum);
-            $subdomainCount++;
+            if (!$this->louwNidaService->hasSubdomainData($domainNum, $subdomainNum)) {
+                $this->louwNidaService->getSubdomainData($domainNum, $subdomainNum);
+                $subdomainCount++; // Only count actual generations
+            }
+
+            if (($subdomainCount % 50) === 0) {
+                $this->entityManager->clear();
+            }
 
             $io->progressAdvance();
         }
