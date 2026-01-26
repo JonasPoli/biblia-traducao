@@ -1,0 +1,2 @@
+Precisa montar um sistema onde cada pessoa que confeir o serviço, marque que já foi conferido e eque está tudo ok.
+Depois, outro conferidor deve ver os versículos conferidos com cor de fundo que indica o quantas vezes foi conferido.
