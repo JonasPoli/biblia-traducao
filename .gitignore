@@ -43,3 +43,7 @@ composer.phar
 ./sql/*
 /sql/*
 sql
+
+###> public/uploads ###
+/public/uploads/*
+###< public/uploads ###
