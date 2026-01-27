@@ -29,26 +29,24 @@ class LouwNidaCacheCommand extends Command
         $io = new SymfonyStyle($input, $output);
         $io->title('Warming up Louw-Nida Cache');
 
-        ini_set('memory_limit', '512M');
+        ini_set('memory_limit', '-1');
 
         // 1. Get all unique domain numbers
         $io->section('Fetching Domains...');
         
-        // Assuming we can get all domains. 
-        // If findAll() returns too many duplicates (because table has subdomains), 
-        // we might need a custom query for unique domains if we iterate domains first.
-        // Or we can just iterate all entries and trigger cache for both domain and subdomain.
+        // Count for progress bar
+        $totalEntries = $this->louwNidaDomainRepository->count([]);
         
-        // Let's get all entries from LouwNidaDomain table
-        $allEntries = $this->louwNidaDomainRepository->findAll();
+        // Use iterable to avoid loading all objects into memory at once
+        $query = $this->louwNidaDomainRepository->createQueryBuilder('d')->getQuery();
         
         $domainsProcessed = [];
         $domainCount = 0;
         $subdomainCount = 0;
 
-        $io->progressStart(count($allEntries));
+        $io->progressStart($totalEntries);
 
-        foreach ($allEntries as $entry) {
+        foreach ($query->toIterable() as $entry) {
             $domainNum = $entry->getDomainNumber();
             $subdomainNum = $entry->getSubdomainNumber();
 

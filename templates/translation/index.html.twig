@@ -33,6 +33,61 @@
         </div>
     </div>
 
+    {# Approval Legend #}
+    <div class="max-w-5xl mx-auto mb-6 px-2">
+        <div class="flex flex-wrap items-center gap-2 text-xs text-slate-500 bg-white/50 backdrop-blur rounded-lg p-3 border border-slate-100 shadow-sm">
+            <span class="font-semibold mr-2 uppercase tracking-wide text-[10px]">Nível de Aprovação:</span>
+            
+            <div class="flex items-center gap-1" title="0 Aprovações">
+                <div class="w-6 h-6 rounded border border-slate-200 bg-white flex items-center justify-center font-bold">0</div>
+            </div>
+
+            <div class="flex items-center gap-1" title="1 Aprovação">
+                <div class="w-6 h-6 rounded bg-green-50 text-green-800 border border-green-100 flex items-center justify-center font-bold">1</div>
+            </div>
+            
+            <div class="flex items-center gap-1" title="2 Aprovações">
+                <div class="w-6 h-6 rounded bg-green-100 text-green-900 border border-green-200 flex items-center justify-center font-bold">2</div>
+            </div>
+
+            <div class="flex items-center gap-1" title="3 Aprovações">
+                <div class="w-6 h-6 rounded bg-green-200 text-green-900 border border-green-300 flex items-center justify-center font-bold">3</div>
+            </div>
+            
+            <div class="flex items-center gap-1" title="4 Aprovações">
+                <div class="w-6 h-6 rounded bg-green-300 text-green-900 border border-green-400 flex items-center justify-center font-bold">4</div>
+            </div>
+            
+            <div class="flex items-center gap-1" title="5 Aprovações">
+                <div class="w-6 h-6 rounded bg-green-400 text-white border border-green-500 flex items-center justify-center font-bold shadow-sm">5</div>
+            </div>
+
+            <div class="flex items-center gap-1" title="6 Aprovações">
+                <div class="w-6 h-6 rounded bg-green-500 text-white border border-green-600 flex items-center justify-center font-bold shadow-sm">6</div>
+            </div>
+            
+            <div class="flex items-center gap-1" title="7 Aprovações">
+                <div class="w-6 h-6 rounded bg-green-600 text-white border border-green-700 flex items-center justify-center font-bold shadow-sm">7</div>
+            </div>
+
+            <div class="flex items-center gap-1" title="8 Aprovações">
+                <div class="w-6 h-6 rounded bg-green-700 text-white border border-green-800 flex items-center justify-center font-bold shadow-sm">8</div>
+            </div>
+            
+            <div class="flex items-center gap-1" title="9 Aprovações">
+                <div class="w-6 h-6 rounded bg-green-800 text-white border border-green-900 flex items-center justify-center font-bold shadow-sm">9</div>
+            </div>
+
+            <div class="flex items-center gap-1" title="10 Aprovações">
+                <div class="w-6 h-6 rounded bg-green-900 text-white border border-green-950 flex items-center justify-center font-bold shadow-sm">10</div>
+            </div>
+
+            <div class="flex items-center gap-1" title="11+ Aprovações">
+                <div class="w-8 h-6 rounded bg-green-950 text-white border border-black flex items-center justify-center font-bold shadow-sm">11+</div>
+            </div>
+        </div>
+    </div>
+
     {# Bible Layout #}
     <div class="max-w-5xl mx-auto bg-[#fdfbf7] shadow-xl shadow-slate-200/50 rounded-lg p-8 md:p-16 min-h-screen border border-stone-200/60 relative overflow-hidden text-gray-900">
         
@@ -49,8 +104,23 @@
         {# Content #}
         <div class="md:columns-2 gap-12 text-justify font-serif text-[1.15rem] leading-[1.8] text-gray-800 space-y-0 first-letter:float-left">
             {% for item in verses %}
+                {% set count = reviewCounts[item.verse.id] ?? 0 %}
+                {% set bgClass = '' %}
+                {% if count == 1 %}{% set bgClass = 'bg-green-50' %}
+                {% elseif count == 2 %}{% set bgClass = 'bg-green-100' %}
+                {% elseif count == 3 %}{% set bgClass = 'bg-green-200' %}
+                {% elseif count == 4 %}{% set bgClass = 'bg-green-300' %}
+                {% elseif count == 5 %}{% set bgClass = 'bg-green-400' %}
+                {% elseif count == 6 %}{% set bgClass = 'bg-green-500' %}
+                {% elseif count == 7 %}{% set bgClass = 'bg-green-600' %}
+                {% elseif count == 8 %}{% set bgClass = 'bg-green-700' %}
+                {% elseif count == 9 %}{% set bgClass = 'bg-green-800' %}
+                {% elseif count == 10 %}{% set bgClass = 'bg-green-900' %}
+                {% elseif count >= 11 %}{% set bgClass = 'bg-green-950' %}
+                {% endif %}
+
                 {% if loop.first %}
-                    <div class="inline">
+                    <div class="inline {{ bgClass }} px-1 rounded transition-colors duration-300">
                         <span class="float-left text-8xl font-black leading-[0.75] mr-3 -ml-1 mt-1 font-serif text-gray-900 select-none">{{ chapter }}</span>
                         {% if is_granted('CAN_EDIT_TRANSLATION', app.user) %}
                             <a href="{{ path('app_translation_verse', {bookId: book.id, chapter: chapter, verseNum: item.verse.verse}) }}" 
@@ -58,6 +128,13 @@
                                title="Editar Versículo {{ item.verse.verse }}">
                                 {{ item.verse.verse }}
                             </a>
+                            <sl-icon 
+                                name="{{ userReviews[item.verse.id] is defined ? 'check-circle-fill' : 'check-circle' }}" 
+                                class="review-toggle cursor-pointer text-base align-middle mr-1 transition-colors {{ userReviews[item.verse.id] is defined ? 'text-green-600' : 'text-gray-300 hover:text-green-500' }}"
+                                data-type="verse" 
+                                data-id="{{ item.verse.id }}"
+                                title="Marcar como revisado">
+                            </sl-icon>
                         {% else %}
                              <span class="font-bold text-lg align-baseline mr-1 text-[#6a5757] select-none cursor-default">
                                 {{ item.verse.verse }}
@@ -72,13 +149,20 @@
                         {{ item.processed_text|raw }}
                     </div>
                 {% else %}
-                    <span class="inline-block hover:bg-yellow-50/50 transition-colors rounded decoration-clone px-0.5 -mx-0.5">
+                    <span class="inline-block hover:bg-yellow-50/50 transition-colors rounded decoration-clone px-0.5 -mx-0.5 {{ bgClass }}">
                         {% if is_granted('CAN_EDIT_TRANSLATION', app.user) %}
                             <a href="{{ path('app_translation_verse', {bookId: book.id, chapter: chapter, verseNum: item.verse.verse}) }}" 
                                class="font-bold text-lg align-baseline mr-1 text-[#6a5757] hover:text-blue-600 select-none transition-colors no-underline"
                                title="Editar Versículo {{ item.verse.verse }}">
                                 {{ item.verse.verse }}
                             </a>
+                            <sl-icon 
+                                name="{{ userReviews[item.verse.id] is defined ? 'check-circle-fill' : 'check-circle' }}" 
+                                class="review-toggle cursor-pointer text-base align-middle mr-1 transition-colors {{ userReviews[item.verse.id] is defined ? 'text-green-600' : 'text-gray-300 hover:text-green-500' }}"
+                                data-type="verse" 
+                                data-id="{{ item.verse.id }}"
+                                title="Marcar como revisado">
+                            </sl-icon>
                         {% else %}
                             <span class="font-bold text-lg align-baseline mr-1 text-[#6a5757] select-none cursor-default">
                                 {{ item.verse.verse }}
@@ -115,4 +199,76 @@
         {% endif %}
     </div>
 </div>
+{% endblock %}
+
+{% block javascripts %}
+    {{ parent() }}
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            const toggles = document.querySelectorAll('.review-toggle');
+            
+            toggles.forEach(toggle => {
+                toggle.addEventListener('click', async (e) => {
+                    e.preventDefault();
+                    e.stopPropagation();
+
+                    const icon = e.currentTarget;
+                    const type = icon.dataset.type;
+                    const id = icon.dataset.id;
+                    
+                    // Current visual state check (before toggle)
+                    const isChecked = icon.name === 'check-circle-fill';
+                    
+                    // Optimistic update
+                    icon.name = isChecked ? 'check-circle' : 'check-circle-fill';
+                    if (!isChecked) {
+                        icon.classList.add('text-green-600');
+                        icon.classList.remove('text-gray-300');
+                    } else {
+                        icon.classList.remove('text-green-600');
+                        icon.classList.add('text-gray-300');
+                    }
+
+                    try {
+                        const response = await fetch(`/admin/review/toggle/${type}/${id}`, {
+                            method: 'POST',
+                            headers: {
+                                'Content-Type': 'application/json'
+                            }
+                        });
+
+                        if (!response.ok) {
+                            throw new Error('Network response was not ok');
+                        }
+
+                        const data = await response.json();
+                        const approved = data.approved;
+                        
+                        // Sync with server state
+                        icon.name = approved ? 'check-circle-fill' : 'check-circle';
+                        if (approved) {
+                            icon.classList.add('text-green-600');
+                            icon.classList.remove('text-gray-300');
+                        } else {
+                            icon.classList.remove('text-green-600');
+                            icon.classList.add('text-gray-300');
+                        }
+
+                    } catch (error) {
+                        console.error('Error toggling review:', error);
+                        // Revert on error
+                        icon.name = isChecked ? 'check-circle-fill' : 'check-circle';
+                        if (isChecked) {
+                            icon.classList.add('text-green-600');
+                            icon.classList.remove('text-gray-300');
+                        } else {
+                            icon.classList.remove('text-green-600');
+                            icon.classList.add('text-gray-300');
+                        }
+                        alert('Erro ao atualizar status de revisão.');
+                    }
+                });
+            });
+        });
+    </script>
 {% endblock %}

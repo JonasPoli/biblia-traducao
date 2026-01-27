@@ -51,6 +51,9 @@
             </div>
         </div>
 
+        </div>
+
+
         {# Comments / Messages #}
         {% if (app.user.workGroup == 4 or app.user.workGroup == 0) and not isAuthor %}
             <div class="max-w-[65rem] mx-auto mt-12">
@@ -155,6 +158,118 @@
                         btn.innerText = originalText;
                     });
                 });
+            </script>
+        {% endif %}
+
+        {# Approval Section #}
+        {% if is_granted('CAN_EDIT_PARATEXT') or is_granted('CAN_COMMENT_PARATEXT') %}
+            <div class="max-w-[65rem] mx-auto mt-8 mb-12">
+                <sl-card class="border-none bg-white dark:bg-slate-900 shadow-sm ring-1 ring-slate-200 dark:ring-slate-800">
+                    <div class="p-6">
+                        <div class="flex flex-col sm:flex-row items-center justify-between gap-4 mb-6">
+                            <div>
+                                <h3 class="text-lg font-bold text-slate-900 dark:text-white flex items-center gap-2">
+                                    <sl-icon name="check2-all" class="text-green-600"></sl-icon>
+                                    Conferência e Aprovação
+                                </h3>
+                                <p class="text-sm text-slate-500 dark:text-slate-400">Marque este conteúdo como revisado se estiver de acordo.</p>
+                            </div>
+                            
+                            <button 
+                                id="paratext-review-btn" 
+                                class="group flex items-center justify-center gap-2 px-6 py-3 rounded-lg transition-all transform active:scale-95 font-medium shadow-sm {{ isReviewed ? 'bg-green-600 text-white hover:bg-green-700 shadow-green-600/20' : 'bg-white border border-slate-300 text-slate-700 hover:bg-slate-50 hover:border-slate-400 dark:bg-slate-800 dark:border-slate-600 dark:text-slate-300 dark:hover:bg-slate-700' }}"
+                                data-type="paratext" 
+                                data-id="{{ paratext.id }}"
+                            >
+                                <sl-icon name="{{ isReviewed ? 'check-circle-fill' : 'check-circle' }}" class="{{ isReviewed ? '' : 'text-slate-400 group-hover:text-green-600 transition-colors' }}"></sl-icon>
+                                <span class="btn-text">{{ isReviewed ? 'Aprovado por você' : 'Eu considero este paratexto conferido e aprovado' }}</span>
+                            </button>
+                        </div>
+                        
+                        <div class="border-t border-slate-100 dark:border-slate-800 pt-6">
+                            <h4 class="text-xs font-bold text-slate-400 uppercase tracking-wider mb-4">Revisado por ({{ reviews|length }})</h4>
+                            
+                            {% if reviews|length > 0 %}
+                                <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
+                                    {% for review in reviews %}
+                                        <div class="flex items-center gap-3 p-3 rounded-lg bg-slate-50 dark:bg-slate-800/50 border border-slate-100 dark:border-slate-700/50">
+                                            {% if review.user.image %}
+                                                <img src="{{ asset('uploads/avatars/' ~ review.user.image) }}" class="w-8 h-8 rounded-full object-cover ring-2 ring-white dark:ring-slate-700">
+                                            {% else %}
+                                                 <div class="w-8 h-8 rounded-full bg-slate-200 dark:bg-slate-700 flex items-center justify-center text-xs font-bold text-slate-600 dark:text-slate-300">
+                                                    {{ review.user.name|first }}
+                                                </div>
+                                            {% endif %}
+                                            <div class="flex-1 min-w-0">
+                                                <p class="text-sm font-medium text-slate-900 dark:text-white truncate">{{ review.user.name }}</p>
+                                                <p class="text-xs text-slate-500 dark:text-slate-400">{{ review.createdAt|date('d/m/Y H:i') }}</p>
+                                            </div>
+                                            <sl-icon name="check-circle-fill" class="text-green-500 text-lg"></sl-icon>
+                                        </div>
+                                    {% endfor %}
+                                </div>
+                            {% else %}
+                                <p class="text-sm text-slate-500 dark:text-slate-400 italic bg-slate-50 dark:bg-slate-800/50 p-4 rounded-lg text-center border border-dashed border-slate-200 dark:border-slate-700">
+                                    Nenhuma revisão registrada até o momento.
+                                </p>
+                            {% endif %}
+                        </div>
+                    </div>
+                </sl-card>
+            </div>
+            
+            <script>
+            document.addEventListener('DOMContentLoaded', () => {
+                const btn = document.getElementById('paratext-review-btn');
+                
+                if (btn) {
+                    btn.addEventListener('click', async (e) => {
+                        e.preventDefault();
+                        
+                        const icon = btn.querySelector('sl-icon');
+                        const textSpan = btn.querySelector('.btn-text');
+                        const type = btn.dataset.type;
+                        const id = btn.dataset.id;
+                        
+                        // Current state
+                        const isChecked = icon.name === 'check-circle-fill';
+                        
+                        // Optimistic Update
+                        if (!isChecked) {
+                            // Approve
+                            btn.classList.remove('bg-white', 'border', 'border-slate-300', 'text-slate-700', 'hover:bg-slate-50', 'dark:bg-slate-800', 'dark:border-slate-600', 'dark:text-slate-300');
+                            btn.classList.add('bg-green-600', 'text-white', 'hover:bg-green-700', 'shadow-green-600/20');
+                            icon.name = 'check-circle-fill';
+                            icon.classList.remove('text-slate-400', 'group-hover:text-green-600');
+                            textSpan.innerText = 'Aprovado por você';
+                        } else {
+                            // Unapprove
+                            btn.classList.add('bg-white', 'border', 'border-slate-300', 'text-slate-700', 'hover:bg-slate-50', 'dark:bg-slate-800', 'dark:border-slate-600', 'dark:text-slate-300');
+                            btn.classList.remove('bg-green-600', 'text-white', 'hover:bg-green-700', 'shadow-green-600/20');
+                            icon.name = 'check-circle';
+                            icon.classList.add('text-slate-400', 'group-hover:text-green-600');
+                            textSpan.innerText = 'Eu considero este paratexto conferido e aprovado';
+                        }
+
+                        try {
+                            const response = await fetch(`/admin/review/toggle/${type}/${id}`, {
+                                method: 'POST',
+                                headers: {'Content-Type': 'application/json'}
+                            });
+                            
+                            if (!response.ok) throw new Error('Failed');
+                            
+                            const data = await response.json();
+                            // Reload to update list
+                            window.location.reload();
+                        } catch (err) {
+                            console.error(err);
+                            alert('Erro ao processar revisão.');
+                            window.location.reload(); 
+                        }
+                    });
+                }
+            });
             </script>
         {% endif %}
     </div>

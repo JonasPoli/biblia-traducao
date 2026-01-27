@@ -8,7 +8,9 @@
         <a href="{{ path('app_translation_chapter', {bookId: book.id, chapter: chapter}) }}" class="text-blue-600 hover:text-blue-800">
             &larr; Voltar para Capítulo
         </a>
-        <h1 class="text-3xl font-bold text-gray-800">{{ book.name }} {{ chapter }}:{{ verse.verse }}</h1>
+        <div class="flex items-center gap-3">
+            <h1 class="text-3xl font-bold text-gray-800">{{ book.name }} {{ chapter }}:{{ verse.verse }}</h1>
+        </div>
     </div>
 
     {# Translation Section #}
@@ -41,6 +43,24 @@
                     <div class="bg-blue-50 p-4 rounded border border-blue-100">
                         <h3 class="text-xs font-semibold text-blue-500 uppercase mb-2">Referência</h3>
                         <p class="text-gray-800 leading-relaxed">{{ texts.reference.text|raw }}</p>
+                    </div>
+                {% endif %}
+
+                {# List of Approvers (Left Column) #}
+                {% if reviews|length > 0 %}
+                    <div class="bg-green-50 p-4 rounded border border-green-200 mt-4">
+                        <h3 class="text-xs font-semibold text-green-700 uppercase mb-3 flex items-center gap-2">
+                             <sl-icon name="check2-all"></sl-icon> Aprovações
+                        </h3>
+                        <div class="space-y-2">
+                            {% for review in reviews %}
+                                <div class="flex items-center gap-2 text-sm bg-white p-2 rounded border border-green-100 shadow-sm">
+                                    <sl-icon name="check-circle-fill" class="text-green-500"></sl-icon>
+                                    <span class="font-medium text-gray-700">{{ review.user.name }}</span>
+                                    <span class="text-xs text-gray-400 ml-auto">{{ review.createdAt|date('d/m/Y H:i') }}</span>
+                                </div>
+                            {% endfor %}
+                        </div>
                     </div>
                 {% endif %}
             </div>
@@ -89,7 +109,7 @@
                     </div>
 
                     {% if is_granted('CAN_COMMENT_TRANSLATION', app.user) %}
-                         <div class="bg-gray-50 p-4 rounded border border-gray-200">
+                         <div class="bg-gray-50 p-4 rounded border border-gray-200 mb-4">
                             <h3 class="text-xs font-semibold text-gray-500 uppercase mb-2">Comentários / Mensagens</h3>
                              <button onclick="document.getElementById('send-message-modal').showModal()" class="w-full bg-white border border-gray-300 hover:bg-gray-50 text-gray-700 font-medium py-2 px-4 rounded transition-colors flex items-center justify-center gap-2">
                                 <sl-icon name="chat-dots"></sl-icon>
@@ -97,6 +117,21 @@
                             </button>
                          </div>
                     {% endif %}
+                    
+                    {# Approval Section #}
+                    {# Approval Section (Right Column - Action Button Only) #}
+                    <div class="bg-gray-50 p-4 rounded border border-gray-200">
+                        <h3 class="text-xs font-semibold text-gray-500 uppercase mb-2">Conferência</h3>
+                        
+                        <button 
+                            class="review-toggle w-full mb-1 flex items-center justify-center gap-2 px-4 py-2 rounded transition-colors {{ isReviewed ? 'bg-green-600 hover:bg-green-700 text-white' : 'bg-white border border-gray-300 hover:bg-gray-50 text-gray-700' }}"
+                            data-type="verse"
+                            data-id="{{ verse.id }}"
+                        >
+                            <sl-icon name="{{ isReviewed ? 'check-circle-fill' : 'check-circle' }}"></sl-icon>
+                            <span class="btn-text">{{ isReviewed ? 'Aprovado por você' : 'Eu considero esta tradução conferida e aprovada' }}</span>
+                        </button>
+                    </div>
                 {% endif %}
 
                 {# References Section #}
@@ -692,6 +727,93 @@
             if (buttons.length > 0) {
                 buttons[0].click();
             }
+        });
+        
+        // Review Toggle Logic
+        document.addEventListener('DOMContentLoaded', () => {
+            const toggles = document.querySelectorAll('.review-toggle');
+            
+            toggles.forEach(toggle => {
+                toggle.addEventListener('click', async (e) => {
+                    e.preventDefault();
+                    e.stopPropagation();
+
+                    const icon = e.currentTarget;
+                    const type = icon.dataset.type;
+                    const id = icon.dataset.id;
+                    
+                    const isChecked = icon.name === 'check-circle-fill';
+                    
+                    // Optimistic update
+                    const btnText = icon.querySelector('.btn-text');
+                    const slIcon = icon.querySelector('sl-icon');
+                    
+                    if (!isChecked) {
+                        // Mark as Checked
+                        icon.classList.remove('bg-white', 'border', 'border-gray-300', 'hover:bg-gray-50', 'text-gray-700');
+                        icon.classList.add('bg-green-600', 'hover:bg-green-700', 'text-white');
+                        slIcon.name = 'check-circle-fill';
+                        if (btnText) btnText.innerText = 'Aprovado por você';
+                        icon.name = 'check-circle-fill'; // for tracking state
+                    } else {
+                        // Uncheck
+                        icon.classList.add('bg-white', 'border', 'border-gray-300', 'hover:bg-gray-50', 'text-gray-700');
+                        icon.classList.remove('bg-green-600', 'hover:bg-green-700', 'text-white');
+                        slIcon.name = 'check-circle';
+                        if (btnText) btnText.innerText = 'Eu considero esta tradução conferida e aprovada';
+                        icon.name = 'check-circle'; // for tracking state
+                    }
+
+                    try {
+                        const response = await fetch(`/admin/review/toggle/${type}/${id}`, {
+                            method: 'POST',
+                            headers: {
+                                'Content-Type': 'application/json'
+                            }
+                        });
+
+                        if (!response.ok) {
+                            throw new Error('Network response was not ok');
+                        }
+
+                        const data = await response.json();
+                        const approved = data.approved;
+                        
+                        // Sync
+                         if (approved) {
+                            icon.classList.remove('bg-white', 'border', 'border-gray-300', 'hover:bg-gray-50', 'text-gray-700');
+                            icon.classList.add('bg-green-600', 'hover:bg-green-700', 'text-white');
+                            slIcon.name = 'check-circle-fill';
+                            if (btnText) btnText.innerText = 'Aprovado por você';
+                            icon.name = 'check-circle-fill';
+                        } else {
+                            icon.classList.add('bg-white', 'border', 'border-gray-300', 'hover:bg-gray-50', 'text-gray-700');
+                            icon.classList.remove('bg-green-600', 'hover:bg-green-700', 'text-white');
+                            slIcon.name = 'check-circle';
+                            if (btnText) btnText.innerText = 'Eu considero esta tradução conferida e aprovada';
+                            icon.name = 'check-circle';
+                        }
+                        
+                        // We might want to reload to update the list, but for now let's just trust optimistic
+                        // Actually, reloading or fetching partial might be better to show the new entry in the list
+                        // Let's just reload to be safe and simple for now as per requirements to show list
+                         window.location.reload(); 
+
+                    } catch (error) {
+                        console.error('Error toggling review:', error);
+                        // Revert
+                        icon.name = isChecked ? 'check-circle-fill' : 'check-circle';
+                        if (isChecked) {
+                            icon.classList.add('text-green-600');
+                            icon.classList.remove('text-gray-300');
+                        } else {
+                            icon.classList.remove('text-green-600');
+                            icon.classList.add('text-gray-300');
+                        }
+                        alert('Erro ao atualizar status de revisão.');
+                    }
+                });
+            });
         });
         </script>
 {% endblock %}

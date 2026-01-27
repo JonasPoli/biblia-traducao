@@ -21,10 +21,35 @@ use Symfony\Component\HttpFoundation\File\Exception\FileException;
 class ParatextController extends AbstractController
 {
     #[Route('/', name: 'app_admin_paratext_index', methods: ['GET'])]
-    public function index(ParatextRepository $paratextRepository): Response
+    public function index(ParatextRepository $paratextRepository, \App\Repository\ParatextReviewRepository $paratextReviewRepository): Response
     {
+        $paratexts = $paratextRepository->findAll();
+
+        // Fetch Reviews
+        $user = $this->getUser();
+        $userReviews = [];
+        $reviewCounts = [];
+        
+        // Fetch all reviews
+        $reviews = $paratextReviewRepository->findAll();
+        
+        foreach ($reviews as $review) {
+            $ptId = $review->getParatext()->getId();
+            
+            if ($user && $review->getUser() === $user) {
+                $userReviews[$ptId] = true;
+            }
+            
+            if (!isset($reviewCounts[$ptId])) {
+                $reviewCounts[$ptId] = 0;
+            }
+            $reviewCounts[$ptId]++;
+        }
+
         return $this->render('admin/paratext/index.html.twig', [
-            'paratexts' => $paratextRepository->findAll(),
+            'paratexts' => $paratexts,
+            'userReviews' => $userReviews,
+            'reviewCounts' => $reviewCounts,
         ]);
     }
 
@@ -116,10 +141,13 @@ class ParatextController extends AbstractController
     }
 
     #[Route('/{id}', name: 'app_admin_paratext_show', methods: ['GET'])]
-    public function show(Paratext $paratext, \App\Repository\UserRepository $userRepository): Response
+    public function show(Paratext $paratext, \App\Repository\UserRepository $userRepository, \App\Repository\ParatextReviewRepository $paratextReviewRepository): Response
     {
         $user = $this->getUser();
         $isAuthor = ($user instanceof User && $paratext->getAuthor() === $user);
+        
+        $reviews = $paratextReviewRepository->findBy(['paratext' => $paratext], ['createdAt' => 'DESC']);
+        $isReviewed = $user ? (bool) $paratextReviewRepository->findOneBy(['user' => $user, 'paratext' => $paratext]) : false;
 
         $recipients = [];
         // If not author, we can message the author.
@@ -144,6 +172,8 @@ class ParatextController extends AbstractController
             'paratext' => $paratext,
             'isAuthor' => $isAuthor,
             'recipients' => $recipients,
+            'reviews' => $reviews,
+            'isReviewed' => $isReviewed,
         ]);
     }
 

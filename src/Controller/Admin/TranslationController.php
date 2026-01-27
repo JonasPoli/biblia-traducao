@@ -11,6 +11,7 @@ use App\Repository\VerseTextRepository;
 use App\Repository\GlobalReferenceRepository;
 use App\Repository\VerseReferenceRepository;
 use App\Repository\StrongDefinitionRepository;
+use App\Repository\VerseReviewRepository;
 use App\Service\BibleDataService;
 use Doctrine\ORM\EntityManagerInterface;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
@@ -35,6 +36,7 @@ final class TranslationController extends AbstractController
         GlobalReferenceRepository $globalReferenceRepository,
         VerseReferenceRepository $verseReferenceRepository,
         VerseTextRepository $verseTextRepository,
+        VerseReviewRepository $verseReviewRepository,
         BibleDataService $bibleDataService,
         Request $request
     ): Response {
@@ -229,6 +231,29 @@ final class TranslationController extends AbstractController
             $data[] = $item;
         }
 
+        // Fetch User Reviews and Counts
+        $user = $this->getUser();
+        $userReviews = [];
+        $reviewCounts = [];
+        
+        // Optimize: Fetch all reviews for these verses in one query
+        $reviews = $verseReviewRepository->findBy(['verse' => $verses]);
+        
+        foreach ($reviews as $review) {
+            $verseId = $review->getVerse()->getId();
+            
+            // Track if current user reviewed
+            if ($user && $review->getUser() === $user) {
+                $userReviews[$verseId] = true;
+            }
+            
+            // Count reviews
+            if (!isset($reviewCounts[$verseId])) {
+                $reviewCounts[$verseId] = 0;
+            }
+            $reviewCounts[$verseId]++;
+        }
+
         // Get total chapters for pagination
         $bookData = $bibleDataService->getBooks()[$book->getId()] ?? null;
         $totalChapters = $bookData ? $bookData['chapters'] : 0;
@@ -240,6 +265,8 @@ final class TranslationController extends AbstractController
             'verses' => $data,
             'footnotes' => $footnotes,
             'originalVersionId' => $originalVersionId,
+            'userReviews' => $userReviews,
+            'reviewCounts' => $reviewCounts,
         ]);
     }
 
@@ -323,6 +350,7 @@ final class TranslationController extends AbstractController
         BookRepository $bookRepository,
         VerseRepository $verseRepository,
         VerseTextRepository $verseTextRepository,
+        VerseReviewRepository $verseReviewRepository,
         \App\Repository\VerseWordRepository $verseWordRepository,
         \App\Repository\VerseReferenceRepository $verseReferenceRepository,
         \App\Repository\GlobalReferenceRepository $globalReferenceRepository,
@@ -680,6 +708,8 @@ final class TranslationController extends AbstractController
             'strongPrefix' => $strongPrefix,
             'strongDefinitions' => $strongDefinitions,
             'recipients' => $recipients,
+            'isReviewed' => $user ? (bool) $verseReviewRepository->findOneBy(['user' => $user, 'verse' => $verse]) : false,
+            'reviews' => $verseReviewRepository->findBy(['verse' => $verse], ['createdAt' => 'DESC']),
         ]);
     }
 
