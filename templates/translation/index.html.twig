@@ -4,19 +4,19 @@
 
 {% block body %}
 <div class="container mx-auto px-4 py-8">
-    <div class="mb-8 flex flex-col gap-6 sticky top-0 bg-white/95 backdrop-blur-md z-30 py-4 border-b border-gray-100 shadow-sm -mx-4 px-4 transition-all">
+    <div class="mb-8 flex flex-col gap-6 sticky top-0 bg-white/95 dark:bg-slate-900/95 backdrop-blur-md z-30 py-4 border-b border-gray-100 dark:border-slate-800 shadow-sm -mx-4 px-4 transition-all">
         <div class="flex items-center gap-4 max-w-7xl mx-auto w-full">
             <a href="{{ path('app_dashboard_chapters', {id: book.id}) }}" 
-               class="group flex items-center gap-2 text-sm font-medium text-slate-500 hover:text-slate-900 transition-colors px-3 py-1.5 rounded-full hover:bg-slate-100">
+               class="group flex items-center gap-2 text-sm font-medium text-slate-500 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white transition-colors px-3 py-1.5 rounded-full hover:bg-slate-100 dark:hover:bg-slate-800">
                 <sl-icon name="arrow-left" class="text-xs transition-transform group-hover:-translate-x-0.5"></sl-icon>
                 Voltar
             </a>
             
-            <div class="h-6 w-px bg-gray-200"></div>
+            <div class="h-6 w-px bg-gray-200 dark:bg-slate-700"></div>
 
             <div class="flex items-baseline gap-3">
-                <h1 class="text-2xl font-bold text-slate-900 tracking-tight font-serif">{{ book.name }}</h1>
-                <span class="text-xl text-slate-400 font-light">Capítulo {{ chapter }}</span>
+                <h1 class="text-2xl font-bold text-slate-900 dark:text-white tracking-tight font-serif">{{ book.name }}</h1>
+                <span class="text-xl text-slate-400 dark:text-slate-500 font-light">Capítulo {{ chapter }}</span>
             </div>
         </div>
         
@@ -26,7 +26,7 @@
                 {% set isActive = i == chapter %}
                 <a href="{{ path('app_translation_chapter', {bookId: book.id, chapter: i}) }}"
                    title="Ir para Capítulo {{ i }}"
-                   class="w-9 h-9 flex items-center justify-center rounded-lg text-sm font-medium transition-all duration-200 border {{ isActive ? 'bg-slate-900 text-white border-slate-900 shadow-md scale-105' : 'bg-white text-slate-500 border-slate-200 hover:border-slate-300 hover:text-slate-900 hover:bg-slate-50' }}">
+                   class="w-9 h-9 flex items-center justify-center rounded-lg text-sm font-medium transition-all duration-200 border {{ isActive ? 'bg-slate-900 dark:bg-blue-600 text-white border-slate-900 dark:border-blue-600 shadow-md scale-105' : 'bg-white dark:bg-slate-800 text-slate-500 dark:text-slate-300 border-slate-200 dark:border-slate-700 hover:border-slate-300 dark:hover:border-slate-600 hover:text-slate-900 dark:hover:text-white hover:bg-slate-50 dark:hover:bg-slate-700' }}">
                     {{ i }}
                 </a>
             {% endfor %}
@@ -35,27 +35,27 @@
 
     {# Approval Legend #}
     <div class="max-w-5xl mx-auto mb-6 px-2">
-        <div class="flex flex-wrap items-center gap-2 text-xs text-slate-500 bg-white/50 backdrop-blur rounded-lg p-3 border border-slate-100 shadow-sm">
-            <span class="font-semibold mr-2 uppercase tracking-wide text-[10px]">Nível de Aprovação:</span>
+        <div class="flex flex-wrap items-center gap-2 text-xs text-slate-500 dark:text-slate-400 bg-white/50 dark:bg-slate-800/50 backdrop-blur rounded-lg p-3 border border-slate-100 dark:border-slate-800 shadow-sm">
+            <span class="font-semibold mr-2 uppercase tracking-wide text-[10px] text-slate-700 dark:text-slate-300">Nível de Aprovação:</span>
             
             <div class="flex items-center gap-1" title="0 Aprovações">
-                <div class="w-6 h-6 rounded border border-slate-200 bg-white flex items-center justify-center font-bold">0</div>
+                <div class="w-6 h-6 rounded border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 flex items-center justify-center font-bold text-slate-700 dark:text-slate-200">0</div>
             </div>
 
             <div class="flex items-center gap-1" title="1 Aprovação">
-                <div class="w-6 h-6 rounded bg-green-50 text-green-800 border border-green-100 flex items-center justify-center font-bold">1</div>
+                <div class="w-6 h-6 rounded bg-green-50 dark:bg-green-950/40 text-green-800 dark:text-green-300 border border-green-100 dark:border-green-900/50 flex items-center justify-center font-bold">1</div>
             </div>
             
             <div class="flex items-center gap-1" title="2 Aprovações">
-                <div class="w-6 h-6 rounded bg-green-100 text-green-900 border border-green-200 flex items-center justify-center font-bold">2</div>
+                <div class="w-6 h-6 rounded bg-green-100 dark:bg-green-900/50 text-green-900 dark:text-green-200 border border-green-200 dark:border-green-800 flex items-center justify-center font-bold">2</div>
             </div>
 
             <div class="flex items-center gap-1" title="3 Aprovações">
-                <div class="w-6 h-6 rounded bg-green-200 text-green-900 border border-green-300 flex items-center justify-center font-bold">3</div>
+                <div class="w-6 h-6 rounded bg-green-200 dark:bg-green-800/60 text-green-900 dark:text-green-100 border border-green-300 dark:border-green-700 flex items-center justify-center font-bold">3</div>
             </div>
             
             <div class="flex items-center gap-1" title="4 Aprovações">
-                <div class="w-6 h-6 rounded bg-green-300 text-green-900 border border-green-400 flex items-center justify-center font-bold">4</div>
+                <div class="w-6 h-6 rounded bg-green-300 dark:bg-green-700/70 text-green-900 dark:text-white border border-green-400 dark:border-green-600 flex items-center justify-center font-bold">4</div>
             </div>
             
             <div class="flex items-center gap-1" title="5 Aprovações">
@@ -89,59 +89,59 @@
     </div>
 
     {# Bible Layout #}
-    <div class="max-w-5xl mx-auto bg-[#fdfbf7] shadow-xl shadow-slate-200/50 rounded-lg p-8 md:p-16 min-h-screen border border-stone-200/60 relative overflow-hidden text-gray-900">
+    <div class="max-w-5xl mx-auto bg-[#fdfbf7] dark:bg-slate-900 shadow-xl shadow-slate-200/50 dark:shadow-slate-950/50 rounded-lg p-8 md:p-16 min-h-screen border border-stone-200/60 dark:border-slate-800 relative overflow-hidden text-gray-900 dark:text-slate-100">
         
         {# Decorative Spine Effect #}
-        <div class="absolute inset-y-0 left-0 w-px bg-gradient-to-b from-transparent via-stone-300 to-transparent opacity-20 hidden md:block" style="left: 50%;"></div>
+        <div class="absolute inset-y-0 left-0 w-px bg-gradient-to-b from-transparent via-stone-300 dark:via-slate-700 to-transparent opacity-20 hidden md:block" style="left: 50%;"></div>
 
         {# Header #}
         <div class="text-center mb-16 relative">
-            <span class="block text-xs font-bold tracking-[0.2em] text-stone-400 uppercase mb-2">Sagradas Escrituras</span>
-            <h1 class="text-5xl font-bold font-serif text-gray-900 mb-2 tracking-tight">{{ book.name }}</h1>
-            <div class="w-16 h-1 bg-stone-800 mx-auto mt-6"></div>
+            <span class="block text-xs font-bold tracking-[0.2em] text-stone-400 dark:text-slate-500 uppercase mb-2">Sagradas Escrituras</span>
+            <h1 class="text-5xl font-bold font-serif text-gray-900 dark:text-white mb-2 tracking-tight">{{ book.name }}</h1>
+            <div class="w-16 h-1 bg-stone-800 dark:bg-slate-400 mx-auto mt-6"></div>
         </div>
 
         {# Content #}
-        <div class="md:columns-2 gap-12 text-justify font-serif text-[1.15rem] leading-[1.8] text-gray-800 space-y-0 first-letter:float-left">
+        <div class="md:columns-2 gap-12 text-justify font-serif text-[1.15rem] leading-[1.8] text-gray-800 dark:text-slate-200 space-y-0 first-letter:float-left">
             {% for item in verses %}
                 {% set count = reviewCounts[item.verse.id] ?? 0 %}
                 {% set bgClass = '' %}
-                {% if count == 1 %}{% set bgClass = 'bg-green-50' %}
-                {% elseif count == 2 %}{% set bgClass = 'bg-green-100' %}
-                {% elseif count == 3 %}{% set bgClass = 'bg-green-200' %}
-                {% elseif count == 4 %}{% set bgClass = 'bg-green-300' %}
-                {% elseif count == 5 %}{% set bgClass = 'bg-green-400' %}
-                {% elseif count == 6 %}{% set bgClass = 'bg-green-500' %}
-                {% elseif count == 7 %}{% set bgClass = 'bg-green-600' %}
-                {% elseif count == 8 %}{% set bgClass = 'bg-green-700' %}
-                {% elseif count == 9 %}{% set bgClass = 'bg-green-800' %}
-                {% elseif count == 10 %}{% set bgClass = 'bg-green-900' %}
-                {% elseif count >= 11 %}{% set bgClass = 'bg-green-950' %}
+                {% if count == 1 %}{% set bgClass = 'bg-green-50 dark:bg-green-950/40' %}
+                {% elseif count == 2 %}{% set bgClass = 'bg-green-100 dark:bg-green-900/40' %}
+                {% elseif count == 3 %}{% set bgClass = 'bg-green-200 dark:bg-green-800/40' %}
+                {% elseif count == 4 %}{% set bgClass = 'bg-green-300 dark:bg-green-700/40' %}
+                {% elseif count == 5 %}{% set bgClass = 'bg-green-400 dark:bg-green-600/40' %}
+                {% elseif count == 6 %}{% set bgClass = 'bg-green-500 dark:bg-green-600/50' %}
+                {% elseif count == 7 %}{% set bgClass = 'bg-green-600 dark:bg-green-700/60' %}
+                {% elseif count == 8 %}{% set bgClass = 'bg-green-700 dark:bg-green-800/70' %}
+                {% elseif count == 9 %}{% set bgClass = 'bg-green-800 dark:bg-green-900/80' %}
+                {% elseif count == 10 %}{% set bgClass = 'bg-green-900 dark:bg-green-950/90' %}
+                {% elseif count >= 11 %}{% set bgClass = 'bg-green-950 dark:bg-green-950' %}
                 {% endif %}
 
                 {% if loop.first %}
                     <div class="inline {{ bgClass }} px-1 rounded transition-colors duration-300">
-                        <span class="float-left text-8xl font-black leading-[0.75] mr-3 -ml-1 mt-1 font-serif text-gray-900 select-none">{{ chapter }}</span>
+                        <span class="float-left text-8xl font-black leading-[0.75] mr-3 -ml-1 mt-1 font-serif text-gray-900 dark:text-white select-none">{{ chapter }}</span>
                         {% if is_granted('CAN_EDIT_TRANSLATION', app.user) %}
                             <a href="{{ path('app_translation_verse', {bookId: book.id, chapter: chapter, verseNum: item.verse.verse}) }}" 
-                               class="font-bold text-lg align-baseline mr-1 text-[#6a5757] hover:text-blue-600 select-none transition-colors no-underline"
+                               class="font-bold text-lg align-baseline mr-1 text-[#6a5757] dark:text-amber-400 hover:text-blue-600 dark:hover:text-blue-400 select-none transition-colors no-underline"
                                title="Editar Versículo {{ item.verse.verse }}">
                                 {{ item.verse.verse }}
                             </a>
                             <sl-icon 
                                 name="{{ userReviews[item.verse.id] is defined ? 'check-circle-fill' : 'check-circle' }}" 
-                                class="review-toggle cursor-pointer text-base align-middle mr-1 transition-colors {{ userReviews[item.verse.id] is defined ? 'text-green-600' : 'text-gray-300 hover:text-green-500' }}"
+                                class="review-toggle cursor-pointer text-base align-middle mr-1 transition-colors {{ userReviews[item.verse.id] is defined ? 'text-green-600 dark:text-green-400' : 'text-gray-300 dark:text-slate-600 hover:text-green-500 dark:hover:text-green-400' }}"
                                 data-type="verse" 
                                 data-id="{{ item.verse.id }}"
                                 title="Marcar como revisado">
                             </sl-icon>
                         {% else %}
-                             <span class="font-bold text-lg align-baseline mr-1 text-[#6a5757] select-none cursor-default">
+                             <span class="font-bold text-lg align-baseline mr-1 text-[#6a5757] dark:text-amber-400 select-none cursor-default">
                                 {{ item.verse.verse }}
                             </span>
                              {# If Reviewer, maybe add a small comment icon? For now just text. #}
                              {% if is_granted('CAN_COMMENT_TRANSLATION', app.user) %}
-                                 <a href="{{ path('app_translation_verse', {bookId: book.id, chapter: chapter, verseNum: item.verse.verse}) }}" class="text-xs text-blue-500 hover:underline" title="Comentar">
+                                 <a href="{{ path('app_translation_verse', {bookId: book.id, chapter: chapter, verseNum: item.verse.verse}) }}" class="text-xs text-blue-500 dark:text-blue-400 hover:underline" title="Comentar">
                                     <sl-icon name="chat"></sl-icon>
                                  </a>
                              {% endif %}
@@ -149,26 +149,26 @@
                         {{ item.processed_text|raw }}
                     </div>
                 {% else %}
-                    <span class="inline-block hover:bg-yellow-50/50 transition-colors rounded decoration-clone px-0.5 -mx-0.5 {{ bgClass }}">
+                    <span class="inline-block hover:bg-yellow-50/50 dark:hover:bg-yellow-900/30 transition-colors rounded decoration-clone px-0.5 -mx-0.5 {{ bgClass }}">
                         {% if is_granted('CAN_EDIT_TRANSLATION', app.user) %}
                             <a href="{{ path('app_translation_verse', {bookId: book.id, chapter: chapter, verseNum: item.verse.verse}) }}" 
-                               class="font-bold text-lg align-baseline mr-1 text-[#6a5757] hover:text-blue-600 select-none transition-colors no-underline"
+                               class="font-bold text-lg align-baseline mr-1 text-[#6a5757] dark:text-amber-400 hover:text-blue-600 dark:hover:text-blue-400 select-none transition-colors no-underline"
                                title="Editar Versículo {{ item.verse.verse }}">
                                 {{ item.verse.verse }}
                             </a>
                             <sl-icon 
                                 name="{{ userReviews[item.verse.id] is defined ? 'check-circle-fill' : 'check-circle' }}" 
-                                class="review-toggle cursor-pointer text-base align-middle mr-1 transition-colors {{ userReviews[item.verse.id] is defined ? 'text-green-600' : 'text-gray-300 hover:text-green-500' }}"
+                                class="review-toggle cursor-pointer text-base align-middle mr-1 transition-colors {{ userReviews[item.verse.id] is defined ? 'text-green-600 dark:text-green-400' : 'text-gray-300 dark:text-slate-600 hover:text-green-500 dark:hover:text-green-400' }}"
                                 data-type="verse" 
                                 data-id="{{ item.verse.id }}"
                                 title="Marcar como revisado">
                             </sl-icon>
                         {% else %}
-                            <span class="font-bold text-lg align-baseline mr-1 text-[#6a5757] select-none cursor-default">
+                            <span class="font-bold text-lg align-baseline mr-1 text-[#6a5757] dark:text-amber-400 select-none cursor-default">
                                 {{ item.verse.verse }}
                             </span>
                             {% if is_granted('CAN_COMMENT_TRANSLATION', app.user) %}
-                                 <a href="{{ path('app_translation_verse', {bookId: book.id, chapter: chapter, verseNum: item.verse.verse}) }}" class="text-xs text-blue-500 hover:underline" title="Comentar">
+                                 <a href="{{ path('app_translation_verse', {bookId: book.id, chapter: chapter, verseNum: item.verse.verse}) }}" class="text-xs text-blue-500 dark:text-blue-400 hover:underline" title="Comentar">
                                     <sl-icon name="chat"></sl-icon>
                                  </a>
                              {% endif %}
@@ -181,16 +181,16 @@
 
         {# Footnotes #}
         {% if footnotes|length > 0 %}
-            <div class="mt-20 pt-8 border-t border-stone-300">
-                <h3 class="text-xs font-bold text-stone-500 uppercase tracking-widest mb-6 text-center">Notas de Referência</h3>
-                <div class="columns-1 md:columns-2 gap-12 text-sm text-stone-600 font-serif leading-snug space-y-4">
+            <div class="mt-20 pt-8 border-t border-stone-300 dark:border-slate-800">
+                <h3 class="text-xs font-bold text-stone-500 dark:text-slate-400 uppercase tracking-widest mb-6 text-center">Notas de Referência</h3>
+                <div class="columns-1 md:columns-2 gap-12 text-sm text-stone-600 dark:text-slate-300 font-serif leading-snug space-y-4">
                     {% for note in footnotes %}
                         <div id="footnote-{{ note.id }}" class="group flex gap-2 break-inside-avoid-column">
-                            <span class="font-bold text-[10px] text-blue-600 translate-y-0.5">{{ note.id }}</span>
+                            <span class="font-bold text-[10px] text-blue-600 dark:text-blue-400 translate-y-0.5">{{ note.id }}</span>
                             <div>
-                                <span class="font-bold text-gray-800 mr-1">{{ note.verse }}</span>
-                                <span class="font-semibold italic text-stone-700 mr-1">{{ note.term }}</span>
-                                <span class="text-stone-600">{{ note.text|raw }}</span>
+                                <span class="font-bold text-gray-800 dark:text-white mr-1">{{ note.verse }}</span>
+                                <span class="font-semibold italic text-stone-700 dark:text-slate-300 mr-1">{{ note.term }}</span>
+                                <span class="text-stone-600 dark:text-slate-400">{{ note.text|raw }}</span>
                             </div>
                         </div>
                     {% endfor %}
@@ -272,3 +272,4 @@
         });
     </script>
 {% endblock %}
+
