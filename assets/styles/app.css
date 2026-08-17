@@ -199,3 +199,66 @@
         }
     }
 }
+
+/* Dark mode High Contrast & Legibility Overrides */
+.dark #strong-definition-footer {
+    background-color: rgba(15, 23, 42, 0.98) !important;
+    color: #f1f5f9 !important;
+    border-color: #334155 !important;
+}
+
+.dark #strong-definition-footer #strong-footer-title {
+    color: #ffffff !important;
+}
+
+.dark #strong-definition-footer #strong-footer-content,
+.dark #strong-definition-footer #strong-footer-content div,
+.dark #strong-definition-footer #strong-footer-content p,
+.dark #strong-definition-footer #strong-footer-content ol,
+.dark #strong-definition-footer #strong-footer-content ul,
+.dark #strong-definition-footer #strong-footer-content li,
+.dark #strong-definition-footer #strong-footer-content span:not([class*="bg-"]):not([class*="text-blue"]):not([class*="text-amber"]) {
+    color: #cbd5e1 !important;
+}
+
+.dark #strong-definition-footer #strong-footer-content li,
+.dark #strong-definition-footer #strong-footer-content ol {
+    color: #e2e8f0 !important;
+}
+
+.dark #word-detail-content ol,
+.dark #word-detail-content ul,
+.dark #word-detail-content li {
+    color: #e2e8f0;
+}
+
+/* TinyMCE Dark mode wrapper adjustments */
+.dark .tox-tinymce {
+    border-color: #334155 !important;
+}
+.dark .tox .tox-edit-area__iframe {
+    background-color: #0f172a !important;
+}
+.dark .tox .tox-toolbar,
+.dark .tox .tox-toolbar__overflow,
+.dark .tox .tox-toolbar__primary {
+    background-color: #1e293b !important;
+    border-bottom-color: #334155 !important;
+}
+.dark .tox .tox-tbtn {
+    color: #cbd5e1 !important;
+}
+.dark .tox .tox-tbtn:hover {
+    background-color: #334155 !important;
+    color: #ffffff !important;
+}
+.dark .tox .tox-tbtn--enabled, .dark .tox .tox-tbtn--active {
+    background-color: #3b82f6 !important;
+    color: #ffffff !important;
+}
+.dark .tox .tox-statusbar {
+    background-color: #1e293b !important;
+    border-top-color: #334155 !important;
+    color: #94a3b8 !important;
+}
+

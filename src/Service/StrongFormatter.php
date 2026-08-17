@@ -127,7 +127,7 @@ class StrongFormatter
                     if (empty($listItems))
                         return '';
 
-                    return "<div class=\"text-gray-800\"><ul style=\"list-style-type: disc !important; padding-left: 20px !important; margin-top: 4px; margin-bottom: 8px;\">{$listItems}</ul></div>";
+                    return "<div class=\"text-gray-800 dark:text-slate-200\"><ul style=\"list-style-type: disc !important; padding-left: 20px !important; margin-top: 4px; margin-bottom: 8px;\">{$listItems}</ul></div>";
                 },
                 $html
             );
@@ -140,21 +140,21 @@ class StrongFormatter
         // Using inline styles to avoid Tailwind purging issues since this path might not be scanned
         $html = preg_replace(
             '/<ol\s+class=["\']c1["\']>/i',
-            '<ol style="list-style-type: decimal !important; padding-left: 24px !important; margin-top: 4px; margin-bottom: 8px; color: #374151;">',
+            '<ol style="list-style-type: decimal !important; padding-left: 24px !important; margin-top: 4px; margin-bottom: 8px;">',
             $html
         );
 
         // c2 -> outline level 2 (a, b, c...)
         $html = preg_replace(
             '/<ol\s+class=["\']c2["\']>/i',
-            '<ol style="list-style-type: lower-alpha !important; padding-left: 24px !important; margin-top: 4px; margin-bottom: 4px; color: #4b5563;">',
+            '<ol style="list-style-type: lower-alpha !important; padding-left: 24px !important; margin-top: 4px; margin-bottom: 4px;">',
             $html
         );
 
         // c3 -> outline level 3 (i, ii, iii...)
         $html = preg_replace(
             '/<ol\s+class=["\']c3["\']>/i',
-            '<ol style="list-style-type: lower-roman !important; padding-left: 24px !important; margin-top: 2px; margin-bottom: 4px; color: #6b7280; font-size: 0.875rem;">',
+            '<ol style="list-style-type: lower-roman !important; padding-left: 24px !important; margin-top: 2px; margin-bottom: 4px; font-size: 0.875rem;">',
             $html
         );
 

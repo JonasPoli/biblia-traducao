@@ -27,16 +27,21 @@
             <meta name="tinymce-api-key" content="{{ tinymceApiKey }}">
             <script>
                 document.addEventListener('DOMContentLoaded', function() {
+                    const isDark = document.documentElement.classList.contains('dark');
                     tinymce.init({
                         selector: '.tinymce',
                         height: 300,
                         menubar: false,
+                        skin: isDark ? 'oxide-dark' : 'oxide',
+                        content_css: isDark ? 'dark' : 'default',
                         plugins: 'advlist autolink lists link image charmap preview anchor searchreplace visualblocks code fullscreen insertdatetime media table code help wordcount',
                         toolbar: 'undo redo | formatselect | ' +
                         'bold italic backcolor | alignleft aligncenter ' +
                         'alignright alignjustify | bullist numlist outdent indent | ' +
                         'removeformat | help',
-                        content_style: 'body { font-family:Helvetica,Arial,sans-serif; font-size:14px }'
+                        content_style: isDark 
+                            ? 'body { font-family:Inter,Helvetica,Arial,sans-serif; font-size:14px; background-color: #0f172a; color: #f8fafc; }' 
+                            : 'body { font-family:Inter,Helvetica,Arial,sans-serif; font-size:14px; }'
                     });
                 });
             </script>
