@@ -176,7 +176,7 @@ final class TranslationController extends AbstractController
                     $translationWordClean = trim($translationWordClean);
 
                     // Use cleaned translation word
-                    $referenceHtml .= "<span class=\"strong-word cursor-pointer hover:bg-yellow-200 transition-colors rounded px-0.5\" data-strong=\"{$strongCode}\">{$translationWordClean}</span> ";
+                    $referenceHtml .= "<span class=\"strong-word cursor-pointer hover:bg-yellow-200 dark:hover:bg-amber-600/60 dark:hover:text-amber-100 transition-colors rounded px-0.5\" data-strong=\"{$strongCode}\">{$translationWordClean}</span> ";
                 }
                 $item['almeida_html'] = trim($referenceHtml);
             }
@@ -189,7 +189,7 @@ final class TranslationController extends AbstractController
 
                 if ($strongCode) {
                     $ptType = $word->getPortugueseType();
-                    $span = "<span class=\"strong-word cursor-pointer hover:bg-yellow-200 transition-colors rounded px-0.5\" data-strong=\"{$strongCode}\">{$originalWord}</span>";
+                    $span = "<span class=\"strong-word cursor-pointer hover:bg-yellow-200 dark:hover:bg-amber-600/60 dark:hover:text-amber-100 transition-colors rounded px-0.5\" data-strong=\"{$strongCode}\">{$originalWord}</span>";
 
                     if ($ptType) {
                         $originalHtml .= "<sl-tooltip content=\"{$ptType}\">{$span}</sl-tooltip> ";
@@ -214,7 +214,7 @@ final class TranslationController extends AbstractController
 
                     if ($strongCode) {
                         $ptType = $word->getPortugueseType();
-                        $span = "<span class=\"strong-word cursor-pointer hover:bg-yellow-200 transition-colors rounded px-0.5\" data-strong=\"{$strongCode}\">{$englishWord}</span>";
+                        $span = "<span class=\"strong-word cursor-pointer hover:bg-yellow-200 dark:hover:bg-amber-600/60 dark:hover:text-amber-100 transition-colors rounded px-0.5\" data-strong=\"{$strongCode}\">{$englishWord}</span>";
 
                         if ($ptType) {
                             $englishHtml .= "<sl-tooltip content=\"{$ptType}\">{$span}</sl-tooltip> ";
@@ -465,7 +465,7 @@ final class TranslationController extends AbstractController
                     $translationWordClean = trim($translationWordClean);
 
                     // Use cleaned translation word
-                    $referenceHtml .= "<span class=\"strong-word cursor-pointer hover:bg-yellow-200 transition-colors rounded px-0.5\" data-strong=\"{$strongCode}\">{$translationWordClean}</span> ";
+                    $referenceHtml .= "<span class=\"strong-word cursor-pointer hover:bg-yellow-200 dark:hover:bg-amber-600/60 dark:hover:text-amber-100 transition-colors rounded px-0.5\" data-strong=\"{$strongCode}\">{$translationWordClean}</span> ";
                 }
                 $item['reference_html'] = trim($referenceHtml);
             }
@@ -478,7 +478,7 @@ final class TranslationController extends AbstractController
 
                 if ($strongCode) {
                     $ptType = $word->getPortugueseType();
-                    $span = "<span class=\"strong-word cursor-pointer hover:bg-yellow-200 transition-colors rounded px-0.5\" data-strong=\"{$strongCode}\" data-original=\"{$originalWord}\">{$originalWord}</span>";
+                    $span = "<span class=\"strong-word cursor-pointer hover:bg-yellow-200 dark:hover:bg-amber-600/60 dark:hover:text-amber-100 transition-colors rounded px-0.5\" data-strong=\"{$strongCode}\" data-original=\"{$originalWord}\">{$originalWord}</span>";
 
                     if ($ptType) {
                         $originalHtml .= "<sl-tooltip content=\"{$ptType}\">{$span}</sl-tooltip> ";
@@ -504,7 +504,7 @@ final class TranslationController extends AbstractController
                     if ($strongCode) {
                         $ptType = $word->getPortugueseType();
                         $originalWordEscaped = htmlspecialchars($word->getWordOriginal(), ENT_QUOTES);
-                        $span = "<span class=\"strong-word cursor-pointer hover:bg-yellow-200 transition-colors rounded px-0.5\" data-strong=\"{$strongCode}\" data-original=\"{$originalWordEscaped}\">{$englishWord}</span>";
+                        $span = "<span class=\"strong-word cursor-pointer hover:bg-yellow-200 dark:hover:bg-amber-600/60 dark:hover:text-amber-100 transition-colors rounded px-0.5\" data-strong=\"{$strongCode}\" data-original=\"{$originalWordEscaped}\">{$englishWord}</span>";
 
                         if ($ptType) {
                             $englishHtml .= "<sl-tooltip content=\"{$ptType}\">{$span}</sl-tooltip> ";
@@ -593,7 +593,7 @@ final class TranslationController extends AbstractController
                 $translationWordClean = str_replace(['/S>', '<S>', '</S>', 'pb/>', 'pb/'], '', $translationWordClean);
                 $translationWordClean = trim($translationWordClean);
 
-                $referenceHtml .= "<span class=\"strong-word cursor-pointer hover:bg-yellow-200 transition-colors rounded px-0.5\" data-strong=\"{$strongCode}\">{$translationWordClean}</span> ";
+                $referenceHtml .= "<span class=\"strong-word cursor-pointer hover:bg-yellow-200 dark:hover:bg-amber-600/60 dark:hover:text-amber-100 transition-colors rounded px-0.5\" data-strong=\"{$strongCode}\">{$translationWordClean}</span> ";
             }
             $almeidaHtml = trim($referenceHtml);
 
@@ -650,7 +650,7 @@ final class TranslationController extends AbstractController
 
             if ($strongCode) {
                 $ptType = $word->getPortugueseType();
-                $span = "<span class=\"strong-word cursor-pointer hover:bg-yellow-200 transition-colors rounded px-0.5\" data-strong=\"{$strongCode}\" data-original=\"{$originalWord}\">{$originalWord}</span>";
+                $span = "<span class=\"strong-word cursor-pointer hover:bg-yellow-200 dark:hover:bg-amber-600/60 dark:hover:text-amber-100 transition-colors rounded px-0.5\" data-strong=\"{$strongCode}\" data-original=\"{$originalWord}\">{$originalWord}</span>";
 
                 if ($ptType) {
                     $originalHtml .= "<sl-tooltip content=\"{$ptType}\">{$span}</sl-tooltip> ";
@@ -676,7 +676,7 @@ final class TranslationController extends AbstractController
                 if ($strongCode) {
                     $ptType = $word->getPortugueseType();
                     $originalWordEscaped = htmlspecialchars($word->getWordOriginal(), ENT_QUOTES);
-                    $span = "<span class=\"strong-word cursor-pointer hover:bg-yellow-200 transition-colors rounded px-0.5\" data-strong=\"{$strongCode}\" data-original=\"{$originalWordEscaped}\">{$englishWord}</span>";
+                    $span = "<span class=\"strong-word cursor-pointer hover:bg-yellow-200 dark:hover:bg-amber-600/60 dark:hover:text-amber-100 transition-colors rounded px-0.5\" data-strong=\"{$strongCode}\" data-original=\"{$originalWordEscaped}\">{$englishWord}</span>";
 
                     if ($ptType) {
                         $englishHtml .= "<sl-tooltip content=\"{$ptType}\">{$span}</sl-tooltip> ";
