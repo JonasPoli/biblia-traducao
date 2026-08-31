@@ -4,8 +4,11 @@ namespace App\Controller\Admin;
 
 use App\Entity\Message;
 use App\Entity\User;
+use App\Repository\BookRepository;
 use App\Repository\MessageRepository;
 use App\Repository\UserRepository;
+use App\Repository\VerseRepository;
+use App\Repository\VerseTextRepository;
 use App\Service\MessageService;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\HttpFoundation\JsonResponse;
@@ -58,8 +61,14 @@ class MessageController extends AbstractController
     }
 
     #[Route('/{id}', name: 'app_admin_message_read', methods: ['GET'], requirements: ['id' => '\d+'])]
-    public function read(Message $message, MessageService $messageService, MessageRepository $messageRepository): Response
-    {
+    public function read(
+        Message $message,
+        MessageService $messageService,
+        MessageRepository $messageRepository,
+        BookRepository $bookRepository,
+        VerseRepository $verseRepository,
+        VerseTextRepository $verseTextRepository
+    ): Response {
         $user = $this->getUser();
         if (!$user instanceof User) {
             throw $this->createAccessDeniedException();
@@ -76,18 +85,6 @@ class MessageController extends AbstractController
             $root = $root->getParent();
         }
 
-        // Fetch all messages in this thread (root + descents)
-        // Since we don't have a closure table, we might just fetch all messages where parent is in the chain?
-        // Simpler: Fetch all where root matches? But we don't store root_id.
-        // For now, let's assume 2-level or simple recursion.
-        // Or better, let's just fetch ALL messages involving these two users and this context?
-        // No, context-based threading is safer.
-
-        // Let's implement a recursive fetch or just use what we have.
-        // If the depth is usually small (Message -> Reply -> Reply), we can traverse.
-        // But for a linear chat view, we want a flat list.
-
-        // Let's rely on a helper or just fetching all replies recursively.
         $conversation = [$root];
         $this->collectReplies($root, $conversation);
 
@@ -101,9 +98,118 @@ class MessageController extends AbstractController
             }
         }
 
+        // Load verse context if available
+        $verseContext = null;
+        if ($root->getContextType() === 'translation' && $root->getContextId()) {
+            $contextId = $root->getContextId();
+            if (is_string($contextId)) {
+                $contextId = json_decode($contextId, true);
+            }
+
+            $bookId = $contextId['book'] ?? $contextId['book_id'] ?? null;
+            $chapter = $contextId['chapter'] ?? null;
+            $verseNum = $contextId['verse'] ?? $contextId['verse_num'] ?? null;
+
+            if ($bookId && $chapter && $verseNum) {
+                $book = is_numeric($bookId)
+                    ? $bookRepository->find((int) $bookId)
+                    : ($bookRepository->findOneBy(['abbreviation' => $bookId]) ?? $bookRepository->findOneBy(['name' => $bookId]));
+
+                if ($book) {
+                    $verse = $verseRepository->findOneBy([
+                        'book' => $book,
+                        'chapter' => (int) $chapter,
+                        'verse' => (int) $verseNum,
+                    ]);
+
+                    if ($verse) {
+                        $isOldTestament = ($book->getTestament() && $book->getTestament()->getId() === 1);
+                        $originalVersionId = $isOldTestament ? 19 : 18; // 19 = Hebrew (HSB), 18 = Greek (BGB)
+
+                        // 1. Original (Greek or Hebrew)
+                        $originalVerseText = $verseTextRepository->findOneBy([
+                            'verse' => $verse,
+                            'version' => $originalVersionId,
+                        ]);
+
+                        $originalHtml = '';
+                        $verseWords = $verse->getVerseWords();
+                        if (count($verseWords) > 0) {
+                            foreach ($verseWords as $word) {
+                                $strongCode = $word->getStrongCode();
+                                $originalWord = $word->getWordOriginal();
+                                if ($strongCode) {
+                                    $ptType = $word->getPortugueseType();
+                                    $span = "<span class=\"strong-word cursor-pointer hover:bg-yellow-200 dark:hover:bg-amber-600/60 dark:hover:text-amber-100 transition-colors rounded px-0.5\" data-strong=\"{$strongCode}\" data-original=\"{$originalWord}\">{$originalWord}</span>";
+                                    if ($ptType) {
+                                        $originalHtml .= "<sl-tooltip content=\"{$ptType}\">{$span}</sl-tooltip> ";
+                                    } else {
+                                        $originalHtml .= "{$span} ";
+                                    }
+                                } else {
+                                    $originalHtml .= "{$originalWord} ";
+                                }
+                            }
+                            $originalHtml = trim($originalHtml);
+                        }
+
+                        if (!$originalHtml && $originalVerseText) {
+                            $originalHtml = $originalVerseText->getText();
+                        }
+
+                        // 2. Almeida (Strong) (Version 22)
+                        $almeidaHtml = '';
+                        $verseText22 = $verseTextRepository->findOneBy([
+                            'verse' => $verse,
+                            'version' => 22,
+                        ]);
+
+                        if ($verseText22) {
+                            $text22 = $verseText22->getText();
+                            $referenceHtml = '';
+                            preg_match_all('/(?P<translation>[^<>]+)<S>(?P<strongCode>[HG]\d+)<\/S>\s*<n>(?P<original>[^<]+)<\/n>/u', $text22, $matchesHtml, PREG_SET_ORDER);
+
+                            foreach ($matchesHtml as $match) {
+                                $strongCode = $match['strongCode'];
+                                $translationWord = trim($match['translation']);
+
+                                $translationWordClean = preg_replace('/[.,!?:;()"\'-]+/', ' ', $translationWord);
+                                $translationWordClean = str_replace(['/S>', '<S>', '</S>', 'pb/>', 'pb/'], '', $translationWordClean);
+                                $translationWordClean = trim($translationWordClean);
+
+                                $referenceHtml .= "<span class=\"strong-word cursor-pointer hover:bg-yellow-200 dark:hover:bg-amber-600/60 dark:hover:text-amber-100 transition-colors rounded px-0.5\" data-strong=\"{$strongCode}\">{$translationWordClean}</span> ";
+                            }
+                            $almeidaHtml = trim($referenceHtml);
+                        }
+
+                        // Fallback to Version 1 if Version 22 is missing
+                        if (!$almeidaHtml) {
+                            $verseText1 = $verseTextRepository->findOneBy([
+                                'verse' => $verse,
+                                'version' => 1,
+                            ]);
+                            if ($verseText1) {
+                                $almeidaHtml = $verseText1->getText();
+                            }
+                        }
+
+                        $verseContext = [
+                            'book' => $book,
+                            'chapter' => (int) $chapter,
+                            'verseNum' => (int) $verseNum,
+                            'originalLanguage' => $isOldTestament ? 'Hebraico' : 'Grego',
+                            'originalHtml' => $originalHtml,
+                            'almeidaHtml' => $almeidaHtml,
+                        ];
+                    }
+                }
+            }
+        }
+
         return $this->render('admin/message/_read_modal.html.twig', [
             'conversation' => $conversation,
             'rootMessage' => $root,
+            'verseContext' => $verseContext,
         ]);
     }
 
