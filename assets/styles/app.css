@@ -2,6 +2,11 @@
 @tailwind components;
 @tailwind utilities;
 
+sl-card {
+    display: block;
+    width: 100%;
+}
+
 .icon-button-no-color-change sl-icon-button::part(base):hover, .icon-button-no-color-change sl-icon-button::part(base):focus {
     color: inherit;
 }

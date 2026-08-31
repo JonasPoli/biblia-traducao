@@ -14,7 +14,7 @@
     {# Main Stats #}
     <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-12">
         {# Total Versules #}
-        <sl-card class="bg-white/80 dark:bg-slate-900/80 border-none shadow-sm backdrop-blur">
+        <sl-card class="w-full bg-white/80 dark:bg-slate-900/80 border-none shadow-sm backdrop-blur">
             <div class="flex items-center gap-4">
                 <div class="p-3 bg-blue-100 dark:bg-blue-900/30 rounded-full text-blue-600 dark:text-blue-400">
                     <sl-icon name="book" class="text-2xl"></sl-icon>
@@ -27,7 +27,7 @@
         </sl-card>
 
         {# Translated #}
-        <sl-card class="bg-white/80 dark:bg-slate-900/80 border-none shadow-sm backdrop-blur">
+        <sl-card class="w-full bg-white/80 dark:bg-slate-900/80 border-none shadow-sm backdrop-blur">
             <div class="flex items-center gap-4">
                 <div class="p-3 bg-emerald-100 dark:bg-emerald-900/30 rounded-full text-emerald-600 dark:text-emerald-400">
                     <sl-icon name="translate" class="text-2xl"></sl-icon>
@@ -40,7 +40,7 @@
         </sl-card>
 
         {# Progress #}
-        <sl-card class="bg-white/80 dark:bg-slate-900/80 border-none shadow-sm backdrop-blur">
+        <sl-card class="w-full bg-white/80 dark:bg-slate-900/80 border-none shadow-sm backdrop-blur">
              <div class="flex items-center gap-4">
                 <div class="p-3 bg-purple-100 dark:bg-purple-900/30 rounded-full text-purple-600 dark:text-purple-400">
                     <sl-icon name="bar-chart" class="text-2xl"></sl-icon>
@@ -56,7 +56,7 @@
         </sl-card>
 
         {# Paratexts #}
-        <sl-card class="bg-white/80 dark:bg-slate-900/80 border-none shadow-sm backdrop-blur">
+        <sl-card class="w-full bg-white/80 dark:bg-slate-900/80 border-none shadow-sm backdrop-blur">
             <div class="flex items-center gap-4">
                 <div class="p-3 bg-amber-100 dark:bg-amber-900/30 rounded-full text-amber-600 dark:text-amber-400">
                     <sl-icon name="journal-text" class="text-2xl"></sl-icon>
@@ -69,20 +69,20 @@
         </sl-card>
     </div>
 
-    <div class="grid grid-cols-1 lg:grid-cols-3 gap-8 mb-12">
+    <div class="grid grid-cols-1 lg:grid-cols-3 gap-8 mb-12 items-start">
         {# Messages Widget #}
-        <div class="lg:col-span-1 space-y-6">
-             <sl-card class="border-none shadow-md bg-white dark:bg-slate-900">
-                <div slot="header" class="flex items-center justify-between">
-                    <span class="font-bold">Mensagens Ativas</span>
+        <div class="lg:col-span-1 space-y-6 min-w-0">
+             <sl-card class="w-full border-none shadow-md bg-white dark:bg-slate-900">
+                <div slot="header" class="flex items-center justify-between gap-2">
+                    <span class="font-bold truncate">Mensagens Ativas</span>
                     {% if unansweredCount > 0 %}
-                        <sl-tag variant="danger" pill>{{ unansweredCount }} não lidas/respondidas</sl-tag>
+                        <sl-tag variant="danger" pill class="shrink-0">{{ unansweredCount }} não lidas/respondidas</sl-tag>
                     {% endif %}
                 </div>
                 <div class="max-h-[400px] overflow-y-auto space-y-2">
                     {% for msg in messages %}
-                        <a href="{{ path('app_admin_message_index') }}?open={{ msg.id }}" class="block p-3 rounded-lg hover:bg-slate-50 dark:hover:bg-white/5 border border-slate-100 dark:border-slate-800 transition-colors">
-                            <div class="flex items-start gap-3">
+                        <a href="{{ path('app_admin_message_index') }}?open={{ msg.id }}" class="block p-3 rounded-lg hover:bg-slate-50 dark:hover:bg-white/5 border border-slate-100 dark:border-slate-800 transition-colors overflow-hidden">
+                            <div class="flex items-start gap-3 min-w-0">
                                 <!-- Avatar(s) -->
                                 <div class="shrink-0 relative flex items-center mt-1">
                                     {% if app.user.workGroup == 0 %}
@@ -113,12 +113,12 @@
                                 </div>
 
                                 <div class="flex-1 min-w-0">
-                                    <div class="flex justify-between text-xs mb-1">
+                                    <div class="flex justify-between items-center text-xs mb-1 gap-2">
                                         <span class="font-semibold text-slate-700 dark:text-slate-300 truncate">{{ msg.sender == app.user ? 'Para: ' ~ msg.recipient.name : 'De: ' ~ msg.sender.name }}</span>
-                                        <span class="text-slate-400 shrink-0 ml-2 whitespace-nowrap">{{ msg.sentAt|date('d/m H:i') }}</span>
+                                        <span class="text-slate-400 shrink-0 whitespace-nowrap">{{ msg.sentAt|date('d/m H:i') }}</span>
                                     </div>
                                     <p class="text-sm font-medium text-slate-800 dark:text-white truncate">{{ msg.subject }}</p>
-                                    <p class="text-xs text-slate-500 truncate">{{ msg.content }}</p>
+                                    <p class="text-xs text-slate-500 truncate">{{ msg.content|striptags|trim }}</p>
                                 </div>
                             </div>
                         </a>
@@ -135,14 +135,14 @@
              
              {# User Specific Paratexts Widgets #}
              {% if myParatexts is not empty %}
-                 <sl-card class="border-none shadow-md bg-white dark:bg-slate-900">
+                 <sl-card class="w-full border-none shadow-md bg-white dark:bg-slate-900">
                     <div slot="header"><span class="font-bold">Seus Paratextos (Edição)</span></div>
                     <div class="space-y-2">
                         {% for pt in myParatexts %}
                             <div class="flex items-center justify-between p-2 hover:bg-slate-50 border-b border-slate-50 dark:border-white/5">
-                                <div class="truncate">
-                                    <p class="text-sm font-medium">{{ pt.title }}</p>
-                                    <p class="text-xs text-slate-500">{{ pt.type|capitalize }}</p>
+                                <div class="truncate min-w-0">
+                                    <p class="text-sm font-medium truncate">{{ pt.title }}</p>
+                                    <p class="text-xs text-slate-500 truncate">{{ pt.type|capitalize }}</p>
                                 </div>
                                 <sl-button size="small" circle href="{{ path('app_admin_paratext_edit', {id: pt.id}) }}">
                                     <sl-icon name="pencil"></sl-icon>
@@ -154,14 +154,14 @@
              {% endif %}
              
              {% if recentParatexts is not empty %}
-                 <sl-card class="border-none shadow-md bg-white dark:bg-slate-900">
+                 <sl-card class="w-full border-none shadow-md bg-white dark:bg-slate-900">
                     <div slot="header"><span class="font-bold">Paratextos Recentes</span></div>
                     <div class="space-y-2">
                          {% for pt in recentParatexts %}
                             <div class="flex items-center justify-between p-2 hover:bg-slate-50 border-b border-slate-50 dark:border-white/5">
-                                <div class="truncate">
-                                    <p class="text-sm font-medium">{{ pt.title }}</p>
-                                    <p class="text-xs text-slate-500">{{ pt.author.name }}</p>
+                                <div class="truncate min-w-0">
+                                    <p class="text-sm font-medium truncate">{{ pt.title }}</p>
+                                    <p class="text-xs text-slate-500 truncate">{{ pt.author.name }}</p>
                                 </div>
                                 <sl-button size="small" circle href="{{ path('app_admin_paratext_show', {id: pt.id}) }}">
                                     <sl-icon name="eye"></sl-icon>
@@ -174,7 +174,7 @@
         </div>
 
         {# Books Grid (Take up 2 cols) #}
-        <div class="lg:col-span-2">
+        <div class="lg:col-span-2 min-w-0">
              <h2 class="text-xl font-bold mb-4 text-slate-800 dark:text-white">Progresso dos Livros</h2>
             <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
                 {% for book in books %}
@@ -187,13 +187,13 @@
                     
                     <a href="{{ path('app_dashboard_chapters', {id: book.id}) }}" class="group relative rounded-xl p-4 border border-slate-200 dark:border-slate-700 bg-white/50 dark:bg-black/20 hover:shadow-md transition-all">
                          <div class="flex justify-between items-start mb-2">
-                             <div class="flex items-center gap-2">
-                                 <span class="w-8 h-8 rounded-full flex items-center justify-center text-xs font-bold bg-white shadow-sm" style="color: {{ visual ? visual.color_dark : '#000' }}">
+                             <div class="flex items-center gap-2 min-w-0">
+                                 <span class="w-8 h-8 shrink-0 rounded-full flex items-center justify-center text-xs font-bold bg-white shadow-sm" style="color: {{ visual ? visual.color_dark : '#000' }}">
                                      {{ book.abbreviation }}
                                  </span>
-                                 <h3 class="font-bold text-slate-900 dark:text-white">{{ book.name }}</h3>
+                                 <h3 class="font-bold text-slate-900 dark:text-white truncate">{{ book.name }}</h3>
                              </div>
-                             <span class="text-xs font-bold px-2 py-1 rounded bg-slate-100 dark:bg-white/10">{{ percentage }}%</span>
+                             <span class="text-xs font-bold px-2 py-1 rounded bg-slate-100 dark:bg-white/10 shrink-0 ml-2">{{ percentage }}%</span>
                          </div>
                          <div class="w-full bg-slate-100 dark:bg-white/5 rounded-full h-1.5 overflow-hidden">
                             <div class="h-full rounded-full transition-all duration-500" style="width: {{ percentage }}%; background-color: {{ visual ? visual.color_dark : '#3b82f6' }}"></div>
