@@ -27,12 +27,18 @@
                             <sl-icon name="translate" class="text-xs text-blue-500"></sl-icon>
                             Original ({{ verseContext.originalLanguage }})
                         </span>
-                        <a href="{{ path('app_translation_verse', {bookId: verseContext.book.id, chapter: verseContext.chapter, verseNum: verseContext.verseNum}) }}" 
-                           target="_blank" 
-                           class="text-xs font-medium text-blue-600 dark:text-blue-400 hover:text-blue-700 dark:hover:text-blue-300 inline-flex items-center gap-1">
-                            <span>{{ verseContext.book.name }} {{ verseContext.chapter }}:{{ verseContext.verseNum }}</span>
-                            <sl-icon name="box-arrow-up-right" class="text-[10px]"></sl-icon>
-                        </a>
+                        {% if verseContext.book and verseContext.book.id %}
+                            <a href="{{ path('app_translation_verse', {bookId: verseContext.book.id, chapter: verseContext.chapter, verseNum: verseContext.verseNum}) }}" 
+                               target="_blank" 
+                               class="text-xs font-medium text-blue-600 dark:text-blue-400 hover:text-blue-700 dark:hover:text-blue-300 inline-flex items-center gap-1">
+                                <span>{{ verseContext.book.name }} {{ verseContext.chapter }}:{{ verseContext.verseNum }}</span>
+                                <sl-icon name="box-arrow-up-right" class="text-[10px]"></sl-icon>
+                            </a>
+                        {% else %}
+                            <span class="text-xs font-medium text-slate-600 dark:text-slate-400">
+                                {{ verseContext.book.name }} {{ verseContext.chapter }}:{{ verseContext.verseNum }}
+                            </span>
+                        {% endif %}
                     </div>
                     <p class="font-serif text-base leading-relaxed text-slate-900 dark:text-slate-100">
                         {{ verseContext.originalHtml|raw }}
