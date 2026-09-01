@@ -48,6 +48,10 @@
                 </p>
             </div>
             <div class="flex flex-wrap gap-3">
+                <sl-button size="large" variant="primary" outline href="{{ path('app_admin_user_import') }}">
+                    <sl-icon slot="prefix" name="cloud-upload"></sl-icon>
+                    Importar Usuários (CSV)
+                </sl-button>
                 <sl-button size="large" variant="default" outline href="{{ path('app_admin_user_new') }}">
                     <sl-icon slot="prefix" name="person-plus"></sl-icon>
                     Adicionar Usuário
@@ -55,6 +59,16 @@
             </div>
         </div>
     </section>
+
+    {# Flash messages #}
+    {% for label, messages in app.flashes %}
+        {% for message in messages %}
+            <sl-alert variant="{{ label == 'success' ? 'success' : 'danger' }}" open closable class="mb-4">
+                <sl-icon slot="icon" name="{{ label == 'success' ? 'check2-circle' : 'exclamation-octagon' }}"></sl-icon>
+                {{ message }}
+            </sl-alert>
+        {% endfor %}
+    {% endfor %}
 
     <sl-card class="border-none bg-white/85 shadow-lg shadow-slate-900/5 ring-1 ring-white/70 backdrop-blur dark:bg-slate-900/70 dark:ring-white/10">
         <div slot="header" class="flex flex-wrap items-center justify-between gap-4">
@@ -115,6 +129,14 @@
                                 <td class="whitespace-nowrap px-3 py-4 text-sm text-slate-500 dark:text-slate-400 font-mono">{{ user.username }}</td>
                                 <td class="relative whitespace-nowrap py-4 pl-3 pr-4 text-right text-sm font-medium sm:pr-6">
                                     <div class="flex justify-end gap-2 opacity-100 sm:opacity-0 group-hover:opacity-100 transition-opacity">
+                                        <form method="post" action="{{ path('app_admin_user_send_reset_link', {'id': user.id}) }}" onsubmit="return confirm('Deseja enviar um e-mail com link de definição de senha para {{ user.name }} ({{ user.email }})?');" class="inline">
+                                            <input type="hidden" name="_token" value="{{ csrf_token('send_reset_' ~ user.id) }}">
+                                            <sl-tooltip content="Enviar Link de Definição de Senha por E-mail">
+                                                <sl-button type="submit" size="small" variant="primary" outline circle class="hover:shadow-md transition-shadow">
+                                                    <sl-icon name="envelope-arrow-up" label="Enviar Senha"></sl-icon>
+                                                </sl-button>
+                                            </sl-tooltip>
+                                        </form>
                                         <a href="{{ path('app_dashboard', {'_switch_user': user.username}) }}" target="_blank" title="Impersonar" class="text-amber-600 hover:text-amber-900">
                                             <sl-button size="small" variant="warning" outline circle class="hover:shadow-md transition-shadow">
                                                 <sl-icon name="person-lines-fill" label="Impersonar"></sl-icon>
