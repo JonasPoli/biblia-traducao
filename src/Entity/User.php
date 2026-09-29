@@ -60,6 +60,67 @@ class User implements UserInterface, PasswordAuthenticatedUserInterface
     #[ORM\Column(nullable: true)]
     private ?\DateTimeImmutable $passwordEmailSentAt = null;
 
+    #[ORM\Column(length: 30, nullable: true)]
+    private ?string $phone = null;
+
+    #[ORM\Column(length: 255, nullable: true)]
+    private ?string $address = null;
+
+    #[ORM\Column(length: 120, nullable: true)]
+    private ?string $city = null;
+
+    /** UF (sigla do estado, ex.: SP) */
+    #[ORM\Column(length: 2, nullable: true)]
+    private ?string $state = null;
+
+    public function getPhone(): ?string
+    {
+        return $this->phone;
+    }
+
+    public function setPhone(?string $phone): static
+    {
+        $this->phone = $phone !== null && trim($phone) !== '' ? trim($phone) : null;
+
+        return $this;
+    }
+
+    public function getAddress(): ?string
+    {
+        return $this->address;
+    }
+
+    public function setAddress(?string $address): static
+    {
+        $this->address = $address !== null && trim($address) !== '' ? trim($address) : null;
+
+        return $this;
+    }
+
+    public function getCity(): ?string
+    {
+        return $this->city;
+    }
+
+    public function setCity(?string $city): static
+    {
+        $this->city = $city !== null && trim($city) !== '' ? trim($city) : null;
+
+        return $this;
+    }
+
+    public function getState(): ?string
+    {
+        return $this->state;
+    }
+
+    public function setState(?string $state): static
+    {
+        $this->state = $state !== null && trim($state) !== '' ? strtoupper(trim($state)) : null;
+
+        return $this;
+    }
+
     /** Quando o usuário definiu a própria senha pela última vez (null = convite pendente). */
     #[ORM\Column(nullable: true)]
     private ?\DateTimeImmutable $passwordSetAt = null;

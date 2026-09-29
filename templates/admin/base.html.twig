@@ -108,6 +108,16 @@
                                 </a>
                             {% endif %}
 
+                            {% set isProfile = app.current_route == 'app_profile' %}
+                            <a class='py-2 px-4 mx-4 mb-2 block rounded hover:shadow hover:shadowed hover:from-white hover:to-white/60 hover:bg-gradient-to-r hover:via-30% dark:hover:from-white/5 dark:hover:via-white/10 dark:hover:to-white/5 {% if isProfile %}shadow bg-gradient-to-r via-30% from-white/40 via-white/90 to-white/50 dark:from-white/10 dark:via-white/20 dark:to-white/10{% endif %}' href="{{ path('app_profile') }}">
+                                {% if app.user.image %}
+                                    <img src="{{ asset('uploads/avatars/' ~ app.user.image) }}" alt="" class="mr-2 inline-block h-5 w-5 rounded-full object-cover align-text-top">
+                                {% else %}
+                                    <sl-icon name="person-circle" class="mr-2 align-text-top"></sl-icon>
+                                {% endif %}
+                                Meu Perfil
+                            </a>
+
                             {{ render(controller('App\\Controller\\Admin\\MenuController::sidebar')) }}
 
                             <a class='py-2 px-4 mx-4 mb-2 block rounded hover:shadow hover:from-white hover:to-white/60 hover:bg-gradient-to-r hover:via-30% dark:hover:from-white/5 dark:hover:via-white/10 dark:hover:to-white/5 align-middle' href="{{path('app_logout')}}"><sl-icon name="box-arrow-left" class="mr-2 align-text-top"></sl-icon> Logout</a>

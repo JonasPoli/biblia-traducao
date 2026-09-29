@@ -1,0 +1,167 @@
+{% extends 'admin/base.html.twig' %}
+
+{% block title %}Meu Perfil{% endblock %}
+
+{% set input_class = 'w-full rounded-2xl border border-slate-200 bg-white/70 px-4 py-3 text-sm text-slate-900 placeholder:text-slate-400 focus:border-slate-400 focus:outline-none dark:border-white/10 dark:bg-slate-900/60 dark:text-white dark:placeholder:text-slate-500' %}
+{% set label_class = 'text-xs font-semibold uppercase tracking-[0.3em] text-slate-500 dark:text-slate-400' %}
+{% set card_class = 'rounded-3xl bg-white/85 p-6 sm:p-8 shadow-lg shadow-slate-900/5 ring-1 ring-white/70 backdrop-blur dark:bg-slate-900/70 dark:ring-white/10' %}
+
+{% macro field(f, input_class, label_class) %}
+    <div class="space-y-2">
+        {{ form_label(f, null, {'label_attr': {'class': label_class}}) }}
+        {{ form_widget(f, {'attr': {'class': input_class}}) }}
+        {% if f.vars.help %}<p class="text-xs text-slate-500 dark:text-slate-400">{{ f.vars.help }}</p>{% endif %}
+        <div class="text-xs text-red-600 dark:text-red-400">{{ form_errors(f) }}</div>
+    </div>
+{% endmacro %}
+{% from _self import field %}
+
+{% block body %}
+<div class="space-y-8">
+    <section class="flex flex-wrap items-center gap-5 rounded-[32px] bg-white/80 p-6 shadow-xl shadow-slate-900/5 ring-1 ring-white/70 backdrop-blur dark:bg-slate-900/70 dark:ring-white/10">
+        {% if user.image %}
+            <img class="h-20 w-20 rounded-full object-cover ring-2 ring-white dark:ring-slate-800" src="{{ asset('uploads/avatars/' ~ user.image) }}" alt="{{ user.name }}">
+        {% else %}
+            <div class="flex h-20 w-20 items-center justify-center rounded-full bg-slate-100 text-slate-400 dark:bg-slate-800">
+                <sl-icon name="person" class="text-4xl"></sl-icon>
+            </div>
+        {% endif %}
+        <div>
+            <p class="text-xs font-semibold uppercase tracking-[0.35em] text-slate-500 dark:text-slate-400">Meu Perfil</p>
+            <h1 class="mt-1 text-3xl font-semibold text-slate-900 dark:text-white">{{ user.name }}</h1>
+            <div class="mt-2">{% include 'admin/user/_work_group_badges.html.twig' with {groups: user.workGroups} only %}</div>
+        </div>
+    </section>
+
+    {% for label, messages in app.flashes %}
+        {% for message in messages %}
+            <sl-alert variant="{{ label == 'success' ? 'success' : 'danger' }}" open closable>
+                <sl-icon slot="icon" name="{{ label == 'success' ? 'check2-circle' : 'exclamation-octagon' }}"></sl-icon>
+                {{ message }}
+            </sl-alert>
+        {% endfor %}
+    {% endfor %}
+
+    {% if not form.vars.valid %}
+        <sl-alert variant="danger" open>
+            <sl-icon slot="icon" name="exclamation-octagon"></sl-icon>
+            Nada foi salvo. Corrija os campos indicados abaixo.
+            <div class="text-xs">{{ form_errors(form) }}</div>
+        </sl-alert>
+    {% endif %}
+
+    {{ form_start(form, {'attr': {'class': 'grid gap-8 lg:grid-cols-3 items-start', 'novalidate': 'novalidate'}}) }}
+        <div class="space-y-8 lg:col-span-2">
+            {# Dados pessoais #}
+            <div class="{{ card_class }} space-y-6">
+                <h2 class="flex items-center gap-2 text-lg font-bold text-slate-900 dark:text-white">
+                    <sl-icon name="person-vcard" class="text-blue-600 dark:text-blue-400"></sl-icon> Dados pessoais
+                </h2>
+                <div class="grid gap-6 md:grid-cols-2">
+                    <div class="md:col-span-2">{{ field(form.name, input_class, label_class) }}</div>
+                    {{ field(form.phone, input_class, label_class) }}
+                    <div></div>
+                    <div class="md:col-span-2">{{ field(form.address, input_class, label_class) }}</div>
+                    {{ field(form.city, input_class, label_class) }}
+                    {{ field(form.state, input_class, label_class) }}
+                </div>
+            </div>
+
+            {# Senha #}
+            <div class="{{ card_class }} space-y-6">
+                <div>
+                    <h2 class="flex items-center gap-2 text-lg font-bold text-slate-900 dark:text-white">
+                        <sl-icon name="key" class="text-blue-600 dark:text-blue-400"></sl-icon> Trocar senha
+                    </h2>
+                    <p class="mt-1 text-sm text-slate-500 dark:text-slate-400">
+                        Opcional. Se deixar "Nova senha" em branco, sua senha continua a mesma.
+                    </p>
+                </div>
+                <div class="grid gap-6 md:grid-cols-2">
+                    <div class="md:col-span-2 md:max-w-sm">{{ field(form.currentPassword, input_class, label_class) }}</div>
+                    {{ field(form.newPassword.first, input_class, label_class) }}
+                    {{ field(form.newPassword.second, input_class, label_class) }}
+                </div>
+            </div>
+
+            <div class="flex justify-end">
+                <button type="submit" class="flex items-center gap-2 rounded-xl bg-blue-600 px-8 py-3.5 font-semibold text-white shadow-lg shadow-blue-600/20 transition-all hover:bg-blue-700 active:scale-95">
+                    <sl-icon name="check2-circle" class="text-lg"></sl-icon> Salvar alterações
+                </button>
+            </div>
+        </div>
+
+        <div class="space-y-8">
+            {# Foto #}
+            <div class="{{ card_class }} space-y-4">
+                <h2 class="flex items-center gap-2 text-lg font-bold text-slate-900 dark:text-white">
+                    <sl-icon name="camera" class="text-blue-600 dark:text-blue-400"></sl-icon> Foto
+                </h2>
+                <div class="flex justify-center">
+                    <img id="avatar-preview"
+                         class="h-32 w-32 rounded-full object-cover ring-4 ring-white shadow dark:ring-slate-800 {{ user.image ? '' : 'hidden' }}"
+                         src="{{ user.image ? asset('uploads/avatars/' ~ user.image) : '' }}" alt="Pré-visualização da foto">
+                    {% if not user.image %}
+                        <div id="avatar-placeholder" class="flex h-32 w-32 items-center justify-center rounded-full bg-slate-100 text-slate-400 dark:bg-slate-800">
+                            <sl-icon name="person" class="text-6xl"></sl-icon>
+                        </div>
+                    {% endif %}
+                </div>
+                <div class="space-y-2">
+                    {{ form_widget(form.imageFile, {'attr': {'class': 'block w-full text-sm text-slate-500 file:mr-4 file:rounded-full file:border-0 file:bg-slate-50 file:px-4 file:py-2 file:text-sm file:font-semibold file:text-slate-700 hover:file:bg-slate-100 dark:file:bg-slate-800 dark:file:text-slate-200'}}) }}
+                    <p class="text-xs text-slate-500 dark:text-slate-400">{{ form.imageFile.vars.help }}</p>
+                    <div class="text-xs text-red-600 dark:text-red-400">{{ form_errors(form.imageFile) }}</div>
+                </div>
+                {% if user.image %}
+                    <label class="flex items-center gap-2 text-sm text-slate-600 dark:text-slate-300">
+                        {{ form_widget(form.removeImage, {'attr': {'class': 'rounded border-slate-300'}}) }}
+                        {{ form.removeImage.vars.label }}
+                    </label>
+                {% else %}
+                    {% do form.removeImage.setRendered() %}
+                {% endif %}
+            </div>
+
+            {# Acesso (somente leitura) #}
+            <div class="{{ card_class }} space-y-4">
+                <h2 class="flex items-center gap-2 text-lg font-bold text-slate-900 dark:text-white">
+                    <sl-icon name="shield-lock" class="text-blue-600 dark:text-blue-400"></sl-icon> Acesso
+                </h2>
+                <div>
+                    <p class="{{ label_class }}">E-mail</p>
+                    <p class="mt-1 break-all text-sm text-slate-900 dark:text-white">{{ user.email }}</p>
+                </div>
+                <div>
+                    <p class="{{ label_class }}">Usuário (login)</p>
+                    <p class="mt-1 break-all font-mono text-sm text-slate-700 dark:text-slate-300">{{ user.username }}</p>
+                </div>
+                <div>
+                    <p class="{{ label_class }}">{{ user.workGroups|length > 1 ? 'Grupos de trabalho' : 'Grupo de trabalho' }}</p>
+                    <ul class="mt-1 space-y-1 text-sm text-slate-900 dark:text-white">
+                        {% for label in user.workGroupLabels %}<li>{{ label }}</li>{% endfor %}
+                    </ul>
+                </div>
+                <p class="text-xs text-slate-500 dark:text-slate-400">
+                    E-mail e grupos são definidos pela coordenação. Para alterá-los, envie uma mensagem ao administrador.
+                </p>
+            </div>
+        </div>
+    {{ form_end(form) }}
+</div>
+
+<script>
+    (() => {
+        const input = document.getElementById('{{ form.imageFile.vars.id }}');
+        const preview = document.getElementById('avatar-preview');
+        const placeholder = document.getElementById('avatar-placeholder');
+        if (!input || !preview) return;
+        input.addEventListener('change', () => {
+            const file = input.files && input.files[0];
+            if (!file) return;
+            preview.src = URL.createObjectURL(file);
+            preview.classList.remove('hidden');
+            if (placeholder) placeholder.classList.add('hidden');
+        });
+    })();
+</script>
+{% endblock %}
