@@ -34,6 +34,23 @@ class UserRepository extends ServiceEntityRepository implements PasswordUpgrader
     }
 
     /**
+     * Convites pendentes (senha nunca criada) cujo link atual não foi enviado ou já expirou.
+     *
+     * @return User[]
+     */
+    public function findInvitationsToResend(): array
+    {
+        return $this->createQueryBuilder('u')
+            ->where('u.passwordSetAt IS NULL')
+            ->andWhere('u.email IS NOT NULL')
+            ->andWhere('u.passwordEmailSentAt IS NULL OR u.resetToken IS NULL OR u.resetTokenExpiresAt <= :now')
+            ->setParameter('now', new \DateTimeImmutable())
+            ->orderBy('u.name', 'ASC')
+            ->getQuery()
+            ->getResult();
+    }
+
+    /**
      * Busca por e-mail ou username, sem diferenciar maiúsculas/minúsculas.
      */
     public function findOneByEmailOrUsername(string $value): ?User

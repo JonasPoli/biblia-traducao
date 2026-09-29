@@ -4,7 +4,7 @@ namespace App\Tests\Service;
 
 use App\Entity\User;
 use App\Repository\UserRepository;
-use App\Service\AuthEmailService;
+use App\Service\PasswordEmailQueue;
 use App\Service\PasswordTokenService;
 use App\Service\UserImportService;
 use Doctrine\ORM\EntityManagerInterface;
@@ -21,7 +21,7 @@ class UserImportServiceTest extends TestCase
             $this->createMock(EntityManagerInterface::class),
             $this->createMock(UserRepository::class),
             $this->createMock(UserPasswordHasherInterface::class),
-            $this->createMock(AuthEmailService::class),
+            $this->createMock(PasswordEmailQueue::class),
             new PasswordTokenService(),
         );
     }

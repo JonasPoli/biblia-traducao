@@ -46,6 +46,7 @@ class ResetPasswordController extends AbstractController
                     $type = $passwordTokenService->issueForUser($user);
                     $entityManager->flush();
                     $authEmailService->sendPasswordResetEmail($user, null, $type);
+                    $entityManager->flush();
                 } elseif ($user) {
                     $logger->info('Forgot-password request throttled or user without e-mail', ['userId' => $user->getId()]);
                 }

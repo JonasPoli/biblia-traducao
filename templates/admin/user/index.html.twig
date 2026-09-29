@@ -48,6 +48,16 @@
                 </p>
             </div>
             <div class="flex flex-wrap gap-3">
+                {% if invitationsToResend > 0 %}
+                    <form method="post" action="{{ path('app_admin_user_resend_pending') }}"
+                          onsubmit="return confirm('Enviar um novo convite (link de 72h) para {{ invitationsToResend }} pessoa(s) que ainda não receberam ou cujo link expirou?');">
+                        <input type="hidden" name="_token" value="{{ csrf_token('resend_pending') }}">
+                        <sl-button size="large" variant="warning" outline type="submit">
+                            <sl-icon slot="prefix" name="envelope-arrow-up"></sl-icon>
+                            Enviar convites pendentes ({{ invitationsToResend }})
+                        </sl-button>
+                    </form>
+                {% endif %}
                 <sl-button size="large" variant="primary" outline href="{{ path('app_admin_user_import') }}">
                     <sl-icon slot="prefix" name="cloud-upload"></sl-icon>
                     Importar Usuários (CSV)
@@ -120,7 +130,11 @@
                                 </td>
                                 <td class="whitespace-nowrap px-3 py-4 text-sm">
                                     {% include 'admin/user/_work_group_badges.html.twig' with {groups: user.workGroups} only %}
-                                    {% if user.invitationPending %}<span class="ml-1 inline-flex items-center rounded-full bg-amber-50 px-2 py-0.5 text-[10px] font-medium text-amber-700 ring-1 ring-inset ring-amber-600/20">Convite pendente</span>{% endif %}
+                                    {% if user.invitationPending %}<span class="ml-1 inline-flex items-center rounded-full bg-amber-50 px-2 py-0.5 text-[10px] font-medium text-amber-700 ring-1 ring-inset ring-amber-600/20">Convite pendente</span>
+                                        <div class="mt-1 text-[11px] {{ user.passwordEmailSentAt ? 'text-slate-500' : 'text-red-600' }}">
+                                            {{ user.passwordEmailSentAt ? 'E-mail enviado em ' ~ user.passwordEmailSentAt|date('d/m H:i', 'America/Sao_Paulo') : 'E-mail ainda não enviado' }}
+                                        </div>
+                                    {% endif %}
                                 </td>
                                 <td class="whitespace-nowrap px-3 py-4 text-sm text-slate-500 dark:text-slate-400 font-mono">{{ user.username }}</td>
                                 <td class="relative whitespace-nowrap py-4 pl-3 pr-4 text-right text-sm font-medium sm:pr-6">

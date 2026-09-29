@@ -56,6 +56,10 @@ class User implements UserInterface, PasswordAuthenticatedUserInterface
     #[ORM\Column(type: 'json', nullable: true)]
     private ?array $workGroups = null;
 
+    /** Quando o e-mail com o link ATUAL (convite/redefinição) foi entregue ao servidor de e-mail. Null = ainda não enviado. */
+    #[ORM\Column(nullable: true)]
+    private ?\DateTimeImmutable $passwordEmailSentAt = null;
+
     /** Quando o usuário definiu a própria senha pela última vez (null = convite pendente). */
     #[ORM\Column(nullable: true)]
     private ?\DateTimeImmutable $passwordSetAt = null;
@@ -197,6 +201,18 @@ class User implements UserInterface, PasswordAuthenticatedUserInterface
     public function setPasswordSetAt(?\DateTimeImmutable $passwordSetAt): static
     {
         $this->passwordSetAt = $passwordSetAt;
+
+        return $this;
+    }
+
+    public function getPasswordEmailSentAt(): ?\DateTimeImmutable
+    {
+        return $this->passwordEmailSentAt;
+    }
+
+    public function setPasswordEmailSentAt(?\DateTimeImmutable $passwordEmailSentAt): static
+    {
+        $this->passwordEmailSentAt = $passwordEmailSentAt;
 
         return $this;
     }

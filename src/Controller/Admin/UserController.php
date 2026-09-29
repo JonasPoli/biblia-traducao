@@ -6,6 +6,7 @@ use App\Entity\User;
 use App\Form\UserType;
 use App\Repository\UserRepository;
 use App\Service\AuthEmailService;
+use App\Service\PasswordEmailQueue;
 use App\Service\PasswordTokenService;
 use App\Service\UserImportService;
 use Doctrine\ORM\EntityManagerInterface;
@@ -26,6 +27,7 @@ class UserController extends AbstractController
     {
         return $this->render('admin/user/index.html.twig', [
             'users' => $userRepository->findAll(),
+            'invitationsToResend' => count($userRepository->findInvitationsToResend()),
         ]);
     }
 
@@ -74,7 +76,10 @@ class UserController extends AbstractController
                         count($result['updated']),
                         count($result['skipped']),
                         count($result['errors'])
-                    ) . ($dryRun ? '' : sprintf(' %d e-mails enviados.', $result['emails_sent'])));
+                    ) . ($dryRun || $result['emails_queued'] === 0 ? '' : sprintf(
+                        ' %d e-mails de convite estão sendo enviados em segundo plano — acompanhe a coluna "E-mail" na lista de usuários.',
+                        $result['emails_queued']
+                    )));
                 }
             }
         }
@@ -108,6 +113,40 @@ class UserController extends AbstractController
         return $response;
     }
 
+    /**
+     * Reenvia o convite (novo link de 72h) para todos que ainda não criaram a senha
+     * e cujo link atual não consta como enviado ou já expirou.
+     * Útil para recuperar uma importação interrompida.
+     */
+    #[Route('/resend-pending-invitations', name: 'app_admin_user_resend_pending', methods: ['POST'])]
+    public function resendPendingInvitations(
+        Request $request,
+        UserRepository $userRepository,
+        PasswordTokenService $passwordTokenService,
+        PasswordEmailQueue $emailQueue,
+        EntityManagerInterface $entityManager
+    ): Response {
+        if (!$this->isCsrfTokenValid('resend_pending', (string) $request->request->get('_token'))) {
+            $this->addFlash('error', 'Token de segurança inválido. Tente novamente.');
+
+            return $this->redirectToRoute('app_admin_user_index');
+        }
+
+        $count = 0;
+        foreach ($userRepository->findInvitationsToResend() as $user) {
+            $passwordTokenService->issueInvitationToken($user);
+            $emailQueue->queue($user, PasswordTokenService::TYPE_INVITATION);
+            $count++;
+        }
+        $entityManager->flush();
+
+        $this->addFlash('success', $count > 0
+            ? sprintf('%d convite(s) sendo enviados em segundo plano, com link válido por %dh. Atualize a página em alguns minutos para ver a data de envio.', $count, PasswordTokenService::INVITATION_TTL_HOURS)
+            : 'Não há convites pendentes para reenviar.');
+
+        return $this->redirectToRoute('app_admin_user_index');
+    }
+
     #[Route('/{id}/send-reset-link', name: 'app_admin_user_send_reset_link', methods: ['POST'])]
     public function sendResetLink(
         Request $request,
@@ -122,6 +161,7 @@ class UserController extends AbstractController
             $entityManager->flush();
 
             $sent = $authEmailService->sendPasswordResetEmail($user, null, $type);
+            $entityManager->flush();
             if ($sent) {
                 $this->addFlash('success', sprintf(
                     '%s enviado para %s (%s). Link válido por %dh.',
@@ -196,6 +236,7 @@ class UserController extends AbstractController
 
             if ($sendInvitation) {
                 $sent = $authEmailService->sendPasswordResetEmail($user, null, PasswordTokenService::TYPE_INVITATION);
+                $entityManager->flush();
                 $this->addFlash($sent ? 'success' : 'error', $sent
                     ? sprintf('Convite para criar a senha enviado para %s.', $user->getEmail())
                     : sprintf('Usuário criado, mas o e-mail para %s falhou. Use o botão de reenviar link.', $user->getEmail()));

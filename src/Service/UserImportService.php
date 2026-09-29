@@ -19,6 +19,7 @@ use function Symfony\Component\String\u;
  * - O mesmo e-mail em várias linhas é consolidado: as atividades são somadas.
  * - E-mail já cadastrado: é ignorado e listado no relatório.
  * - Usuário novo: recebe convite para criar a senha (link válido por 72h).
+ *   Os e-mails vão para PasswordEmailQueue e saem depois da resposta HTTP.
  */
 class UserImportService
 {
@@ -35,7 +36,7 @@ class UserImportService
         private readonly EntityManagerInterface $entityManager,
         private readonly UserRepository $userRepository,
         private readonly UserPasswordHasherInterface $passwordHasher,
-        private readonly AuthEmailService $authEmailService,
+        private readonly PasswordEmailQueue $emailQueue,
         private readonly PasswordTokenService $passwordTokenService,
     ) {
     }
@@ -194,7 +195,7 @@ class UserImportService
      * Cadastra os usuários ainda não existentes e envia o convite.
      *
      * @param array<int, array{name: string, email: string, workGroups: list<int>}> $rows
-     * @return array{total: int, created: array, updated: array, skipped: array, errors: array, emails_sent: int, dry_run: bool}
+     * @return array{total: int, created: array, updated: array, skipped: array, errors: array, emails_queued: int, dry_run: bool}
      */
     public function importUsers(array $rows, bool $sendEmail = true, bool $overwrite = false, bool $dryRun = false): array
     {
@@ -202,7 +203,7 @@ class UserImportService
         $updated = [];
         $skipped = [];
         $errors = [];
-        $emailsSent = 0;
+        $emailsQueued = 0;
 
         foreach ($rows as $row) {
             $email = filter_var($row['email'], FILTER_VALIDATE_EMAIL);
@@ -236,7 +237,7 @@ class UserImportService
                         continue;
                     }
 
-                    $emailSuccess = false;
+                    $emailQueued = false;
                     if (!$dryRun) {
                         $existingUser->setName($name);
                         $existingUser->setWorkGroups($groups);
@@ -247,8 +248,9 @@ class UserImportService
                         $this->entityManager->flush();
 
                         if ($sendEmail) {
-                            $emailSuccess = $this->authEmailService->sendPasswordResetEmail($existingUser, null, $type);
-                            $emailsSent += (int) $emailSuccess;
+                            $this->emailQueue->queue($existingUser, $type);
+                            $emailQueued = true;
+                            $emailsQueued++;
                         }
                     }
 
@@ -256,13 +258,13 @@ class UserImportService
                         'email' => $email,
                         'name' => $name,
                         'workGroups' => $groups,
-                        'emailSent' => $emailSuccess,
+                        'emailQueued' => $emailQueued,
                         'warnings' => $warnings,
                     ];
                     continue;
                 }
 
-                $emailSuccess = false;
+                $emailQueued = false;
                 if (!$dryRun) {
                     $user = new User();
                     $user->setName($name);
@@ -279,12 +281,10 @@ class UserImportService
                     $this->entityManager->flush();
 
                     if ($sendEmail) {
-                        $emailSuccess = $this->authEmailService->sendPasswordResetEmail(
-                            $user,
-                            null,
-                            PasswordTokenService::TYPE_INVITATION
-                        );
-                        $emailsSent += (int) $emailSuccess;
+                        // Enviado depois da resposta HTTP (evita 504 com muitos usuários)
+                        $this->emailQueue->queue($user, PasswordTokenService::TYPE_INVITATION);
+                        $emailQueued = true;
+                        $emailsQueued++;
                     }
                 }
 
@@ -292,7 +292,7 @@ class UserImportService
                     'email' => $email,
                     'name' => $name,
                     'workGroups' => $groups,
-                    'emailSent' => $emailSuccess,
+                    'emailQueued' => $emailQueued,
                     'warnings' => $warnings,
                 ];
             } catch (\Throwable $e) {
@@ -309,7 +309,7 @@ class UserImportService
             'updated' => $updated,
             'skipped' => $skipped,
             'errors' => $errors,
-            'emails_sent' => $emailsSent,
+            'emails_queued' => $emailsQueued,
             'dry_run' => $dryRun,
         ];
     }

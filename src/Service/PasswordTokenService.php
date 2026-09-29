@@ -67,6 +67,7 @@ class PasswordTokenService
         $token = bin2hex(random_bytes(32));
         $user->setResetToken($token);
         $user->setResetTokenExpiresAt(new \DateTimeImmutable(sprintf('+%d hours', $hoursValid)));
+        $user->setPasswordEmailSentAt(null); // o link novo ainda não foi enviado
 
         return $token;
     }

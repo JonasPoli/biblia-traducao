@@ -148,6 +148,34 @@ class UserImportFlowTest extends WebTestCase
         $this->assertEmailHtmlBodyContains($email, '/reset-password/');
 
         $this->assertSelectorTextContains('body', 'Ignorado (Já existe)');
+
+        // Envio acontece depois da resposta e fica registrado
+        $this->assertNotNull($this->reload('bia.duas@exemplo.com')->getPasswordEmailSentAt());
+    }
+
+    public function testResendPendingInvitationsRecoversInterruptedImport(): void
+    {
+        $this->client->loginUser($this->createUser('admin@exemplo.com', [0]));
+        // Simula importação interrompida: usuário criado, convite nunca enviado
+        $this->createUser('orfao@exemplo.com', [3], passwordSet: false);
+        // Convite já entregue e ainda válido: não deve receber de novo
+        $ok = $this->createUser('ok@exemplo.com', [4], passwordSet: false);
+        $ok->setResetToken('t-ok')->setResetTokenExpiresAt(new \DateTimeImmutable('+10 hours'))->setPasswordEmailSentAt(new \DateTimeImmutable());
+        $this->em->flush();
+
+        $crawler = $this->client->request('GET', '/admin/user/');
+        $this->assertSelectorTextContains('body', 'Enviar convites pendentes (1)');
+        $this->assertSelectorTextContains('body', 'E-mail ainda não enviado');
+
+        $this->client->submit($crawler->filter('form[action$="resend-pending-invitations"]')->form());
+        $this->assertResponseRedirects('/admin/user/');
+        $this->assertEmailCount(1);
+        $this->assertEmailAddressContains($this->getMailerMessage(0), 'to', 'orfao@exemplo.com');
+
+        $orfao = $this->reload('orfao@exemplo.com');
+        $this->assertNotNull($orfao->getPasswordEmailSentAt());
+        $this->assertEqualsWithDelta((new \DateTimeImmutable('+72 hours'))->getTimestamp(), $orfao->getResetTokenExpiresAt()->getTimestamp(), 30);
+        $this->assertSame('t-ok', $this->reload('ok@exemplo.com')->getResetToken());
     }
 
     public function testDryRunWritesNothing(): void

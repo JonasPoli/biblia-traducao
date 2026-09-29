@@ -22,7 +22,8 @@ class ImportUsersCommand extends Command
 {
     public function __construct(
         private readonly UserImportService $userImportService,
-        private readonly AuthEmailService $authEmailService
+        private readonly AuthEmailService $authEmailService,
+        private readonly \App\Service\PasswordEmailQueue $emailQueue
     ) {
         parent::__construct();
     }
@@ -77,6 +78,9 @@ class ImportUsersCommand extends Command
 
         $result = $this->userImportService->importUsers($rows, $sendEmail, $overwrite, (bool) $input->getOption('dry-run'));
 
+        // No terminal não há gateway: envia agora e mostra o resultado
+        $mail = $this->emailQueue->flush();
+
         $progressBar->finish();
         $io->newLine(2);
 
@@ -88,7 +92,7 @@ class ImportUsersCommand extends Command
                 $item['email'],
                 implode(', ', array_map([$this->authEmailService, 'getWorkGroupName'], $item['workGroups'])),
                 '<fg=green>Criado</>',
-                $item['emailSent'] ? '<fg=green>Enviado</>' : ($sendEmail ? '<fg=red>Falhou</>' : '<fg=gray>Ignorado</>'),
+                $item['emailQueued'] ? '<fg=green>Na fila</>' : '<fg=gray>Não</>',
             ];
         }
 
@@ -98,7 +102,7 @@ class ImportUsersCommand extends Command
                 $item['email'],
                 implode(', ', array_map([$this->authEmailService, 'getWorkGroupName'], $item['workGroups'])),
                 '<fg=yellow>Atualizado</>',
-                $item['emailSent'] ? '<fg=green>Enviado</>' : ($sendEmail ? '<fg=red>Falhou</>' : '<fg=gray>Ignorado</>'),
+                $item['emailQueued'] ? '<fg=green>Na fila</>' : '<fg=gray>Não</>',
             ];
         }
 
@@ -129,13 +133,14 @@ class ImportUsersCommand extends Command
 
         $io->newLine();
         $io->success(sprintf(
-            'Importação concluída! Total: %d | Criados: %d | Atualizados: %d | Ignorados: %d | Erros: %d | E-mails Enviados: %d',
+            'Importação concluída! Total: %d | Criados: %d | Atualizados: %d | Ignorados: %d | Erros: %d | E-mails enviados: %d | Falhas de envio: %d',
             $result['total'],
             count($result['created']),
             count($result['updated']),
             count($result['skipped']),
             count($result['errors']),
-            $result['emails_sent']
+            $mail['sent'],
+            $mail['failed']
         ));
 
         return Command::SUCCESS;

@@ -83,6 +83,7 @@ class AuthEmailService
                 ]);
 
             $this->mailer->send($email);
+            $user->setPasswordEmailSentAt(new \DateTimeImmutable()); // o chamador faz o flush
             $this->logger->info('Password reset email sent successfully', ['email' => $user->getEmail()]);
 
             return true;
