@@ -25,8 +25,40 @@ class User implements UserInterface, PasswordAuthenticatedUserInterface
     #[ORM\Column(length: 255, unique: true)]
     private ?string $email = null;
 
-    #[ORM\Column(type: 'integer', options: ['default' => 0])]
-    private int $workGroup = 0;
+    public const GROUP_ADMIN = 0;
+    public const GROUP_TRANSLATOR = 1;
+    public const GROUP_TRANSLATION_REVIEWER = 2;
+    public const GROUP_PARATEXT_AUTHOR = 3;
+    public const GROUP_PARATEXT_REVIEWER = 4;
+
+    public const GROUP_LABELS = [
+        self::GROUP_ADMIN => 'Administrador',
+        self::GROUP_TRANSLATOR => 'Tradutor',
+        self::GROUP_TRANSLATION_REVIEWER => 'Revisor de Tradução',
+        self::GROUP_PARATEXT_AUTHOR => 'Autor de Paratextos',
+        self::GROUP_PARATEXT_REVIEWER => 'Revisor de Paratextos',
+    ];
+
+    /**
+     * Grupo "principal" (legado). Mantido em sincronia com $workGroups:
+     * sempre o menor grupo da lista. Use hasWorkGroup()/isAdmin() para checagens.
+     */
+    // Padrão NÃO-admin: antes era 0, o que tornava administrador qualquer usuário criado sem grupo explícito.
+    #[ORM\Column(type: 'integer', options: ['default' => 1])]
+    private int $workGroup = self::GROUP_TRANSLATOR;
+
+    /**
+     * Todos os grupos/atividades do usuário (um usuário pode ter vários).
+     * Null em registros antigos: nesse caso vale apenas $workGroup.
+     *
+     * @var list<int>|null
+     */
+    #[ORM\Column(type: 'json', nullable: true)]
+    private ?array $workGroups = null;
+
+    /** Quando o usuário definiu a própria senha pela última vez (null = convite pendente). */
+    #[ORM\Column(nullable: true)]
+    private ?\DateTimeImmutable $passwordSetAt = null;
 
     /**
      * @var list<string> The user roles
@@ -86,11 +118,93 @@ class User implements UserInterface, PasswordAuthenticatedUserInterface
         return $this->workGroup;
     }
 
+    /**
+     * Define um único grupo (substitui todos os outros).
+     */
     public function setWorkGroup(int $workGroup): static
     {
-        $this->workGroup = $workGroup;
+        return $this->setWorkGroups([$workGroup]);
+    }
+
+    /**
+     * @return list<int>
+     */
+    public function getWorkGroups(): array
+    {
+        if ($this->workGroups === null || $this->workGroups === []) {
+            return [$this->workGroup];
+        }
+
+        return $this->workGroups;
+    }
+
+    /**
+     * @param iterable<int|string> $workGroups
+     */
+    public function setWorkGroups(iterable $workGroups): static
+    {
+        $groups = [];
+        foreach ($workGroups as $group) {
+            $group = (int) $group;
+            if (isset(self::GROUP_LABELS[$group])) {
+                $groups[$group] = $group;
+            }
+        }
+
+        if ($groups === []) {
+            // Lista vazia é tratada pela validação do formulário (Count min 1);
+            // aqui apenas não alteramos o grupo principal.
+            $this->workGroups = [];
+
+            return $this;
+        }
+
+        ksort($groups);
+        $this->workGroups = array_values($groups);
+        $this->workGroup = $this->workGroups[0];
 
         return $this;
+    }
+
+    public function addWorkGroup(int $workGroup): static
+    {
+        return $this->setWorkGroups([...$this->getWorkGroups(), $workGroup]);
+    }
+
+    public function hasWorkGroup(int $workGroup): bool
+    {
+        return in_array($workGroup, $this->getWorkGroups(), true);
+    }
+
+    public function isAdmin(): bool
+    {
+        return $this->hasWorkGroup(self::GROUP_ADMIN);
+    }
+
+    /**
+     * @return list<string>
+     */
+    public function getWorkGroupLabels(): array
+    {
+        return array_map(static fn (int $g) => self::GROUP_LABELS[$g] ?? 'Grupo ' . $g, $this->getWorkGroups());
+    }
+
+    public function getPasswordSetAt(): ?\DateTimeImmutable
+    {
+        return $this->passwordSetAt;
+    }
+
+    public function setPasswordSetAt(?\DateTimeImmutable $passwordSetAt): static
+    {
+        $this->passwordSetAt = $passwordSetAt;
+
+        return $this;
+    }
+
+    /** True enquanto a pessoa ainda não criou a própria senha (convite pendente). */
+    public function isInvitationPending(): bool
+    {
+        return $this->passwordSetAt === null;
     }
 
     /**
@@ -113,7 +227,7 @@ class User implements UserInterface, PasswordAuthenticatedUserInterface
         // guarantee every user at least has ROLE_USER
         $roles[] = 'ROLE_USER';
 
-        if ($this->workGroup === 0) {
+        if ($this->isAdmin()) {
             $roles[] = 'ROLE_ADMIN';
         }
 

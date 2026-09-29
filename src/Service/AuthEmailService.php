@@ -21,6 +21,14 @@ class AuthEmailService
     ) {
     }
 
+    /**
+     * @return list<string>
+     */
+    public function getWorkGroupNames(User $user): array
+    {
+        return array_map(fn (int $g) => $this->getWorkGroupName($g), $user->getWorkGroups());
+    }
+
     public function getWorkGroupName(int $workGroup): string
     {
         return match ($workGroup) {
@@ -34,9 +42,10 @@ class AuthEmailService
     }
 
     /**
-     * Send password definition/reset email to user.
+     * Envia o e-mail de convite (criar senha, 72h) ou de redefinição (2h).
+     * Se $type não for informado, deduz: quem ainda não criou senha recebe convite.
      */
-    public function sendPasswordResetEmail(User $user, ?string $customResetUrl = null): bool
+    public function sendPasswordResetEmail(User $user, ?string $customResetUrl = null, ?string $type = null): bool
     {
         if (!$user->getEmail()) {
             $this->logger->warning('Cannot send password reset email: user has no email', ['userId' => $user->getId()]);
@@ -55,15 +64,22 @@ class AuthEmailService
                 UrlGeneratorInterface::ABSOLUTE_URL
             );
 
+            $isInvitation = ($type ?? ($user->isInvitationPending() ? PasswordTokenService::TYPE_INVITATION : PasswordTokenService::TYPE_RESET))
+                === PasswordTokenService::TYPE_INVITATION;
+
             $email = (new TemplatedEmail())
                 ->from(new Address($this->emailFrom, 'Tradução do Novo Testamento'))
                 ->to(new Address($user->getEmail(), $user->getName() ?? $user->getEmail()))
-                ->subject('Definição de Senha - Tradução do Novo Testamento')
+                ->subject($isInvitation
+                    ? 'Bem-vindo(a)! Crie sua senha - Tradução do Novo Testamento'
+                    : 'Redefinição de Senha - Tradução do Novo Testamento')
                 ->htmlTemplate('emails/password_reset_email.html.twig')
                 ->context([
                     'user' => $user,
                     'resetUrl' => $resetUrl,
-                    'workGroupName' => $this->getWorkGroupName($user->getWorkGroup()),
+                    'workGroupNames' => $this->getWorkGroupNames($user),
+                    'isInvitation' => $isInvitation,
+                    'validHours' => $isInvitation ? PasswordTokenService::INVITATION_TTL_HOURS : PasswordTokenService::RESET_TTL_HOURS,
                 ]);
 
             $this->mailer->send($email);

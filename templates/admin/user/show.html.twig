@@ -46,14 +46,9 @@
                 <p class="mt-2 font-mono text-sm text-slate-600 dark:text-slate-300">{{ user.username }}</p>
             </div>
              <div>
-                <p class="text-xs font-semibold uppercase tracking-[0.3em] text-slate-500 dark:text-slate-400">Grupo</p>
+                <p class="text-xs font-semibold uppercase tracking-[0.3em] text-slate-500 dark:text-slate-400">Grupos / Atividades</p>
                 <p class="mt-2 text-lg font-semibold text-slate-900 dark:text-white">
-                    {% if user.workGroup == 0 %}Administrador
-                    {% elseif user.workGroup == 1 %}Tradutor
-                    {% elseif user.workGroup == 2 %}Revisor de Tradução
-                    {% elseif user.workGroup == 3 %}Autor de Paratextos
-                    {% elseif user.workGroup == 4 %}Revisor de Paratextos
-                    {% else %}Desconhecido ({{ user.workGroup }}){% endif %}
+                    {{ user.workGroupLabels|join(', ') }}
                 </p>
             </div>
         </div>

@@ -43,7 +43,7 @@ final class DashboardController extends AbstractController
         // Let's rely on MessageRepository to fetch relevant messages.
         // User wants: "Mensagens não respondidas" (Count?) and "Lista das mensagens (menos as resolvidas)"
 
-        if ((int) $user->getWorkGroup() === 0) {
+        if ($user->isAdmin()) {
             $activeMessages = $messageRepository->findAllConversations(null);
         } else {
             $activeMessages = $messageRepository->findConversations($user, null);
@@ -57,12 +57,12 @@ final class DashboardController extends AbstractController
 
         // Check Group/Role
         // Group 3: Author Paratext
-        if ($user->getWorkGroup() === 3 || $user->getWorkGroup() === 0) {
+        if ($user->hasWorkGroup(3) || $user->isAdmin()) {
             $myParatexts = $paratextRepository->findBy(['author' => $user], ['updatedAt' => 'DESC'], 5);
         }
 
         // Group 4: Reviewer Paratext (or Admin/Others)
-        if ($user->getWorkGroup() === 4 || $user->getWorkGroup() === 0) {
+        if ($user->hasWorkGroup(4) || $user->isAdmin()) {
             $recentParatexts = $paratextRepository->findBy([], ['updatedAt' => 'DESC'], 5);
         }
 

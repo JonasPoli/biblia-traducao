@@ -1,0 +1,14 @@
+{# Badges para todos os grupos/atividades de um usuário. Uso: include com `groups` (lista de ints) #}
+{% set badgeStyles = {
+    0: ['Admin', 'bg-red-50 text-red-700 ring-red-600/10'],
+    1: ['Tradutor', 'bg-blue-50 text-blue-700 ring-blue-700/10'],
+    2: ['Revisor Trad.', 'bg-yellow-50 text-yellow-800 ring-yellow-600/20'],
+    3: ['Autor Paratexto', 'bg-green-50 text-green-700 ring-green-600/20'],
+    4: ['Revisor Paratexto', 'bg-purple-50 text-purple-700 ring-purple-700/10'],
+} %}
+<span class="inline-flex flex-wrap gap-1">
+{% for group in groups %}
+    {% set style = badgeStyles[group] ?? ['Grupo ' ~ group, 'bg-slate-50 text-slate-600 ring-slate-500/10'] %}
+    <span class="inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-medium ring-1 ring-inset {{ style[1] }}">{{ style[0] }}</span>
+{% endfor %}
+</span>

@@ -80,7 +80,7 @@
                                 </a>
                             {% endif %}
 
-                            {% if is_granted('CAN_EDIT_PARATEXT') or is_granted('CAN_COMMENT_PARATEXT') or app.user.workGroup == 0 %}
+                            {% if is_granted('CAN_EDIT_PARATEXT') or is_granted('CAN_COMMENT_PARATEXT') or app.user.admin %}
                                 {% set isParatext = app.current_route starts with 'app_admin_paratext' %}
                                 <a class='py-2 px-4 mx-4 mb-2 block rounded hover:shadow hover:shadowed hover:from-white hover:to-white/60 hover:bg-gradient-to-r hover:via-30% dark:hover:from-white/5 dark:hover:via-white/10 dark:hover:to-white/5 {% if isParatext %}shadow bg-gradient-to-r via-30% from-white/40 via-white/90 to-white/50 dark:from-white/10 dark:via-white/20 dark:to-white/10{% endif %}' href="{{ path('app_admin_paratext_index') }}">
                                     <sl-icon name="journal-text" class="mr-2 align-text-top"></sl-icon>
@@ -100,7 +100,7 @@
                                 </div>
                             </a>
 
-                            {% if app.user.workGroup == 0 %}
+                            {% if app.user.admin %}
                                 {% set isUser = app.current_route starts with 'app_admin_user' %}
                                 <a class='py-2 px-4 mx-4 mb-2 block rounded hover:shadow hover:shadowed hover:from-white hover:to-white/60 hover:bg-gradient-to-r hover:via-30% dark:hover:from-white/5 dark:hover:via-white/10 dark:hover:to-white/5 {% if isUser %}shadow bg-gradient-to-r via-30% from-white/40 via-white/90 to-white/50 dark:from-white/10 dark:via-white/20 dark:to-white/10{% endif %}' href="{{ path('app_admin_user_index') }}">
                                     <sl-icon name="people" class="mr-2 align-text-top"></sl-icon>

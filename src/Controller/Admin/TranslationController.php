@@ -364,10 +364,10 @@ final class TranslationController extends AbstractController
         $recipients = [];
         $allUsers = $userRepository->findAll();
 
-        if ($user instanceof \App\Entity\User && $user->getWorkGroup() === 2) {
+        if ($user instanceof \App\Entity\User && $user->hasWorkGroup(2) && !$user->isAdmin()) {
             // Revisor de Tradução (2) sees only Tradutores (1)
             $recipients = array_filter($allUsers, function ($u) {
-                return $u->getWorkGroup() === 1;
+                return $u->hasWorkGroup(1);
             });
         } else {
             // Admin and others see everyone

@@ -11,6 +11,7 @@ use Symfony\Component\Form\Extension\Core\Type\TextType;
 use Symfony\Component\Form\Extension\Core\Type\FileType;
 use Symfony\Component\Form\FormBuilderInterface;
 use Symfony\Component\OptionsResolver\OptionsResolver;
+use Symfony\Component\Validator\Constraints\Count;
 use Symfony\Component\Validator\Constraints\Length;
 use Symfony\Component\Validator\Constraints\NotBlank;
 
@@ -35,8 +36,11 @@ class UserType extends AbstractType
                 'label' => 'Usuário',
                 'help' => 'Usado para login se diferente do e-mail (opcional)',
             ])
-            ->add('workGroup', ChoiceType::class, [
-                'label' => 'Grupo de Trabalho',
+            ->add('workGroups', ChoiceType::class, [
+                'label' => 'Grupos de Trabalho',
+                'multiple' => true,
+                'expanded' => true,
+                'constraints' => [new Count(['min' => 1, 'minMessage' => 'Selecione pelo menos um grupo de trabalho.'])],
                 'choices' => [
                     'Administrador (Grupo 0)' => 0,
                     'Tradutor (Grupo 1)' => 1,

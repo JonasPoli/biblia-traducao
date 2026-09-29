@@ -6,6 +6,7 @@ use App\Entity\User;
 use App\Form\UserType;
 use App\Repository\UserRepository;
 use App\Service\AuthEmailService;
+use App\Service\PasswordTokenService;
 use App\Service\UserImportService;
 use Doctrine\ORM\EntityManagerInterface;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
@@ -45,6 +46,7 @@ class UserController extends AbstractController
 
             $sendEmail = (bool) $request->request->get('send_email', false);
             $overwrite = (bool) $request->request->get('overwrite', false);
+            $dryRun = (bool) $request->request->get('dry_run', false);
 
             $csvContent = '';
             $uploadedFile = $request->files->get('csv_file');
@@ -63,19 +65,24 @@ class UserController extends AbstractController
                 if (empty($rows)) {
                     $this->addFlash('error', 'Nenhum registro válido pôde ser extraído do CSV.');
                 } else {
-                    $result = $userImportService->importUsers($rows, $sendEmail, $overwrite);
-                    $this->addFlash('success', sprintf(
-                        'Importação concluída! %d criados, %d atualizados, %d e-mails enviados.',
+                    $result = $userImportService->importUsers($rows, $sendEmail, $overwrite, $dryRun);
+                    $this->addFlash($dryRun ? 'info' : 'success', sprintf(
+                        $dryRun
+                            ? 'Simulação: %d seriam criados, %d atualizados, %d já cadastrados, %d com erro. Nada foi gravado nem enviado.'
+                            : 'Importação concluída! %d criados, %d atualizados, %d já cadastrados, %d com erro.',
                         count($result['created']),
                         count($result['updated']),
-                        $result['emails_sent']
-                    ));
+                        count($result['skipped']),
+                        count($result['errors'])
+                    ) . ($dryRun ? '' : sprintf(' %d e-mails enviados.', $result['emails_sent'])));
                 }
             }
         }
 
         return $this->render('admin/user/import.html.twig', [
             'result' => $result,
+            'groupLabels' => User::GROUP_LABELS,
+            'invitationHours' => PasswordTokenService::INVITATION_TTL_HOURS,
         ]);
     }
 
@@ -83,11 +90,11 @@ class UserController extends AbstractController
     public function importTemplate(): Response
     {
         $csvContent = "\xEF\xBB\xBF" . "Nome,Email,Grupo de Trabalho\n"
-            . "João da Silva,joao.silva@exemplo.com,Tradutor\n"
-            . "Maria Santos,maria.santos@exemplo.com,Revisor de Tradução\n"
-            . "Pedro Oliveira,pedro.oliveira@exemplo.com,Autor de Paratextos\n"
-            . "Ana Costa,ana.costa@exemplo.com,Revisor de Paratextos\n"
-            . "Carlos Admin,carlos.admin@exemplo.com,Administrador\n";
+            . "João da Silva,joao.silva@exemplo.com,Criar paratextos\n"
+            . "Maria Santos,maria.santos@exemplo.com,\"Criar paratextos, Conferir paratextos\"\n"
+            . "Pedro Oliveira,pedro.oliveira@exemplo.com,Conferir tradução\n"
+            . "Ana Costa,ana.costa@exemplo.com,\"Conferir tradução, Conferir paratextos\"\n"
+            . "Carlos Tradutor,carlos@exemplo.com,Tradutor\n";
 
         $response = new Response($csvContent);
         $disposition = HeaderUtils::makeDisposition(
@@ -105,17 +112,24 @@ class UserController extends AbstractController
     public function sendResetLink(
         Request $request,
         User $user,
-        UserImportService $userImportService,
+        PasswordTokenService $passwordTokenService,
         AuthEmailService $authEmailService,
         EntityManagerInterface $entityManager
     ): Response {
         if ($this->isCsrfTokenValid('send_reset_' . $user->getId(), $request->request->get('_token'))) {
-            $userImportService->generateResetToken($user, 48);
+            // Convite pendente → novo convite (72h); senão → redefinição normal (2h)
+            $type = $passwordTokenService->issueForUser($user);
             $entityManager->flush();
 
-            $sent = $authEmailService->sendPasswordResetEmail($user);
+            $sent = $authEmailService->sendPasswordResetEmail($user, null, $type);
             if ($sent) {
-                $this->addFlash('success', sprintf('E-mail de definição de senha enviado com sucesso para %s (%s).', $user->getName(), $user->getEmail()));
+                $this->addFlash('success', sprintf(
+                    '%s enviado para %s (%s). Link válido por %dh.',
+                    $type === PasswordTokenService::TYPE_INVITATION ? 'Convite' : 'E-mail de redefinição de senha',
+                    $user->getName(),
+                    $user->getEmail(),
+                    $type === PasswordTokenService::TYPE_INVITATION ? PasswordTokenService::INVITATION_TTL_HOURS : PasswordTokenService::RESET_TTL_HOURS
+                ));
             } else {
                 $this->addFlash('error', sprintf('Falha ao enviar e-mail para %s (%s). Verifique as configurações de envio.', $user->getName(), $user->getEmail()));
             }
@@ -125,7 +139,7 @@ class UserController extends AbstractController
     }
 
     #[Route('/new', name: 'app_admin_user_new', methods: ['GET', 'POST'])]
-    public function new(Request $request, EntityManagerInterface $entityManager, UserPasswordHasherInterface $userPasswordHasher, \Symfony\Component\String\Slugger\SluggerInterface $slugger): Response
+    public function new(Request $request, EntityManagerInterface $entityManager, UserPasswordHasherInterface $userPasswordHasher, \Symfony\Component\String\Slugger\SluggerInterface $slugger, PasswordTokenService $passwordTokenService, AuthEmailService $authEmailService): Response
     {
         $user = new User();
         $form = $this->createForm(UserType::class, $user);
@@ -165,10 +179,27 @@ class UserController extends AbstractController
                         $strPassword
                     )
                 );
+                $user->setPasswordSetAt(new \DateTimeImmutable());
+                $user->clearResetToken();
+            }
+
+            // Sem senha informada: cria como convite e envia o e-mail para a pessoa criar a senha (72h)
+            $sendInvitation = !$strPassword;
+            if ($sendInvitation) {
+                $user->setPassword($userPasswordHasher->hashPassword($user, bin2hex(random_bytes(16))));
+                $user->setPasswordSetAt(null);
+                $passwordTokenService->issueInvitationToken($user);
             }
 
             $entityManager->persist($user);
             $entityManager->flush();
+
+            if ($sendInvitation) {
+                $sent = $authEmailService->sendPasswordResetEmail($user, null, PasswordTokenService::TYPE_INVITATION);
+                $this->addFlash($sent ? 'success' : 'error', $sent
+                    ? sprintf('Convite para criar a senha enviado para %s.', $user->getEmail())
+                    : sprintf('Usuário criado, mas o e-mail para %s falhou. Use o botão de reenviar link.', $user->getEmail()));
+            }
 
             return $this->redirectToRoute('app_admin_user_index', [], Response::HTTP_SEE_OTHER);
         }
@@ -221,6 +252,8 @@ class UserController extends AbstractController
                         $strPassword
                     )
                 );
+                $user->setPasswordSetAt(new \DateTimeImmutable());
+                $user->clearResetToken();
             }
 
             $entityManager->flush();

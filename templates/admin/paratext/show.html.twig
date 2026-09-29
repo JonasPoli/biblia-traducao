@@ -55,7 +55,7 @@
 
 
         {# Comments / Messages #}
-        {% if (app.user.workGroup == 4 or app.user.workGroup == 0) and not isAuthor %}
+        {% if (app.user.hasWorkGroup(4) or app.user.admin) and not isAuthor %}
             <div class="max-w-[65rem] mx-auto mt-12">
                 <sl-card class="border-none bg-blue-50/50 shadow-sm ring-1 ring-blue-100 dark:bg-blue-900/10 dark:ring-blue-900/20">
                     <div class="flex items-center justify-between p-4">

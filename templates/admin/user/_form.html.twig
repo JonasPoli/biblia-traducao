@@ -51,13 +51,16 @@
             {{ form_errors(form.username) }}
         </div>
         <div class="space-y-2">
-            {{ form_label(form.workGroup, null, {'label_attr': {'class': 'text-xs font-semibold uppercase tracking-[0.3em] text-slate-500 dark:text-slate-400'}}) }}
-            {{ form_widget(form.workGroup, {
-                'attr': {
-                    'class': 'w-full rounded-2xl border border-slate-200 bg-white/70 px-4 py-3 text-sm text-slate-900 placeholder:text-slate-400 focus:border-slate-400 focus:outline-none dark:border-white/10 dark:bg-slate-900/60 dark:text-white dark:placeholder:text-slate-500'
-                }
-            }) }}
-            {{ form_errors(form.workGroup) }}
+            {{ form_label(form.workGroups, null, {'label_attr': {'class': 'text-xs font-semibold uppercase tracking-[0.3em] text-slate-500 dark:text-slate-400'}}) }}
+            <div class="grid gap-2 rounded-2xl border border-slate-200 bg-white/70 px-4 py-3 text-sm text-slate-900 dark:border-white/10 dark:bg-slate-900/60 dark:text-white">
+                {% for choice in form.workGroups %}
+                    <label class="flex items-center gap-2">
+                        {{ form_widget(choice, {'attr': {'class': 'rounded border-slate-300'}}) }}
+                        <span>{{ choice.vars.label }}</span>
+                    </label>
+                {% endfor %}
+            </div>
+            {{ form_errors(form.workGroups) }}
         </div>
     </div>
 

@@ -47,7 +47,7 @@ class MessageController extends AbstractController
         $status = $request->query->get('status');
         // If no status is provided, default to null (repo handles default of unread/read/ignored/replied)
 
-        if ((int) $user->getWorkGroup() === 0) { // Admin
+        if ($user->isAdmin()) { // Admin
             $conversations = $messageRepository->findAllConversations($status);
         } else {
             $conversations = $messageRepository->findConversations($user, $status);
@@ -55,7 +55,7 @@ class MessageController extends AbstractController
 
         return $this->render('admin/message/index.html.twig', [
             'conversations' => $conversations,
-            'isAdmin' => (int) $user->getWorkGroup() === 0,
+            'isAdmin' => $user->isAdmin(),
             'currentStatus' => $status,
         ]);
     }
@@ -75,7 +75,7 @@ class MessageController extends AbstractController
         }
 
         // Access check: User must be sender or recipient of the message (or Admin)
-        if ($message->getRecipient() !== $user && $message->getSender() !== $user && $user->getWorkGroup() !== 0) {
+        if ($message->getRecipient() !== $user && $message->getSender() !== $user && !$user->isAdmin()) {
             throw $this->createAccessDeniedException();
         }
 
@@ -284,7 +284,7 @@ class MessageController extends AbstractController
             throw $this->createAccessDeniedException();
         }
 
-        if ($message->getRecipient() !== $user && $user->getWorkGroup() !== 0) {
+        if ($message->getRecipient() !== $user && !$user->isAdmin()) {
             // Only recipient (or admin) can reply effectively? 
             // Or maybe sender wants to double reply?
             // Spec says: "Reply" button marks as Responded (if received).
@@ -319,7 +319,7 @@ class MessageController extends AbstractController
             throw $this->createAccessDeniedException();
         }
 
-        if ($message->getRecipient() !== $user && $user->getWorkGroup() !== 0) {
+        if ($message->getRecipient() !== $user && !$user->isAdmin()) {
             throw $this->createAccessDeniedException();
         }
 

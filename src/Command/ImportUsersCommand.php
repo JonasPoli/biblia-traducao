@@ -33,6 +33,7 @@ class ImportUsersCommand extends Command
             ->addArgument('file', InputArgument::REQUIRED, 'Caminho para o arquivo CSV com os usuários (ex: var/usuarios.csv)')
             ->addOption('no-email', null, InputOption::VALUE_NONE, 'Não envia e-mails de definição de senha para os usuários')
             ->addOption('overwrite', null, InputOption::VALUE_NONE, 'Atualiza dados de usuários já existentes e reenvia e-mail se solicitado')
+            ->addOption('dry-run', null, InputOption::VALUE_NONE, 'Apenas simula: não grava nada e não envia e-mails')
         ;
     }
 
@@ -74,7 +75,7 @@ class ImportUsersCommand extends Command
         $progressBar = $io->createProgressBar(count($rows));
         $progressBar->start();
 
-        $result = $this->userImportService->importUsers($rows, $sendEmail, $overwrite);
+        $result = $this->userImportService->importUsers($rows, $sendEmail, $overwrite, (bool) $input->getOption('dry-run'));
 
         $progressBar->finish();
         $io->newLine(2);
@@ -85,7 +86,7 @@ class ImportUsersCommand extends Command
             $tableRows[] = [
                 $item['name'],
                 $item['email'],
-                $this->authEmailService->getWorkGroupName($item['workGroup']),
+                implode(', ', array_map([$this->authEmailService, 'getWorkGroupName'], $item['workGroups'])),
                 '<fg=green>Criado</>',
                 $item['emailSent'] ? '<fg=green>Enviado</>' : ($sendEmail ? '<fg=red>Falhou</>' : '<fg=gray>Ignorado</>'),
             ];
@@ -95,7 +96,7 @@ class ImportUsersCommand extends Command
             $tableRows[] = [
                 $item['name'],
                 $item['email'],
-                $this->authEmailService->getWorkGroupName($item['workGroup']),
+                implode(', ', array_map([$this->authEmailService, 'getWorkGroupName'], $item['workGroups'])),
                 '<fg=yellow>Atualizado</>',
                 $item['emailSent'] ? '<fg=green>Enviado</>' : ($sendEmail ? '<fg=red>Falhou</>' : '<fg=gray>Ignorado</>'),
             ];
@@ -105,7 +106,7 @@ class ImportUsersCommand extends Command
             $tableRows[] = [
                 $item['name'],
                 $item['email'],
-                '-',
+                implode(', ', array_map([$this->authEmailService, 'getWorkGroupName'], $item['workGroups'])),
                 '<fg=blue>Ignorado (Já existe)</>',
                 '-',
             ];
@@ -122,7 +123,7 @@ class ImportUsersCommand extends Command
         }
 
         $table = new Table($output);
-        $table->setHeaders(['Nome', 'E-mail', 'Grupo de Trabalho', 'Status', 'E-mail']);
+        $table->setHeaders(['Nome', 'E-mail', 'Atividades', 'Status', 'E-mail']);
         $table->setRows($tableRows);
         $table->render();
 

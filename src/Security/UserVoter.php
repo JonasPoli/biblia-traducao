@@ -43,7 +43,7 @@ class UserVoter extends Voter
         }
 
         // Admin (0) has access to everything
-        if ($user->getWorkGroup() === 0) {
+        if ($user->isAdmin()) {
             return true;
         }
 
@@ -61,7 +61,7 @@ class UserVoter extends Voter
     private function canEditTranslation(User $user): bool
     {
         // Only Translator (1) and Admin (0 - handled above)
-        return $user->getWorkGroup() === 1;
+        return $user->hasWorkGroup(1);
     }
 
     private function canCommentTranslation(User $user): bool
@@ -69,30 +69,30 @@ class UserVoter extends Voter
         // Translation Reviewer (2)
         // Also Translator (1) might want to comment? 
         // Spec says: Reviewer -> Translator flow.
-        return $user->getWorkGroup() === 2;
+        return $user->hasWorkGroup(2);
     }
 
     private function canEditParatext(User $user): bool
     {
         // Paratext Author (3)
-        return $user->getWorkGroup() === 3;
+        return $user->hasWorkGroup(3);
     }
 
     private function canCommentParatext(User $user): bool
     {
         // Paratext Reviewer (4)
-        return $user->getWorkGroup() === 4;
+        return $user->hasWorkGroup(4);
     }
 
     private function canExport(User $user): bool
     {
         // Translator (1) can export
-        return $user->getWorkGroup() === 1;
+        return $user->hasWorkGroup(1);
     }
 
     private function canViewGlobalReferences(User $user): bool
     {
         // Translator (1)
-        return $user->getWorkGroup() === 1;
+        return $user->hasWorkGroup(1);
     }
 }

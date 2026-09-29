@@ -75,6 +75,8 @@ class AdminUserCommand extends Command
         $user = new User();
         $user->setUsername($userName);
         $user->setRoles(['ROLE_ADMIN']);
+        $user->setWorkGroup(User::GROUP_ADMIN);
+        $user->setPasswordSetAt(new \DateTimeImmutable());
         $passHash = $this->userPasswordHasher->hashPassword($user, $pass);
         $user->setPassword($passHash);
 
